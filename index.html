@@ -478,7 +478,7 @@
         <div class="tp-meta">
           <div class="tp-chip">Survey Year <span>2024–25</span></div>
           <div class="tp-chip">Kharif + Rabi <span>Seasons</span></div>
-          <div class="tp-chip">Demo <span>42 fields</span></div>
+          <div class="tp-chip">Fields <span id="tpHeaderFieldCount">—</span></div>
         </div>
       </div>
     </header>
@@ -769,75 +769,148 @@
 
   /* ─── Tirupati dashboard (lazy init) ─── */
   function initTirupatiDashboard() {
-    var VILLAGE_CENTER = [13.6120, 79.9480];
+    var DEFAULT_CENTER = [13.6120, 79.9480];
+    var FIELDS_GEOJSON = "data/chinagottigallu_fields.geojson";
     var CROP_COLORS = {
       Paddy: "#4ade80", Sugarcane: "#fbbf24", Groundnut: "#fb923c", Cotton: "#e5e5e5",
       Mango: "#f472b6", Vegetables: "#60a5fa", Chilli: "#f87171", Fallow: "#9ca3af"
     };
     var CROP_ORDER = ["Paddy", "Sugarcane", "Groundnut", "Cotton", "Mango", "Vegetables", "Chilli", "Fallow"];
 
-    function makeField(id, lat, lng, w, h, crop, farmer, season, yield_val, survey) {
-      var noise = function () { return (Math.random() - 0.5) * 0.0008; };
-      var latOff = w / 2, lngOff = h / 2;
-      var coords = [
-        [lat - latOff + noise(), lng - lngOff + noise()],
-        [lat - latOff + noise(), lng + lngOff + noise()],
-        [lat + latOff + noise(), lng + lngOff + noise()],
-        [lat + latOff + noise(), lng - lngOff + noise()]
-      ];
-      var area = Math.round((w * 111000) * (h * 111000) / 4047);
-      return { id: id, crop: crop, farmer: farmer, season: season, yield_val: yield_val, survey: survey, area: Math.max(area, 8), coords: coords };
+    function cropColor(name) {
+      return CROP_COLORS[name] || "#94a3b8";
     }
 
-    var seed = 42;
-    function rand() { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; }
-
-    var FARMERS = ["K. Ramamurthy", "V. Subramaniam", "T. Lakshmi Devi", "R. Narayana Reddy", "B. Venkata Rao", "P. Srinivasa", "M. Anjaneyulu", "S. Padmavathi", "C. Govinda Reddy", "D. Ramakrishna", "L. Saraswathi", "N. Hanumantha Rao"];
-    var SEASONS = ["Kharif 2024", "Rabi 2024-25", "Kharif 2024", "Rabi 2024-25"];
-    var CROP_POOL = [].concat(
-      Array(16).fill("Paddy"), Array(5).fill("Sugarcane"), Array(6).fill("Groundnut"), Array(4).fill("Cotton"),
-      Array(3).fill("Mango"), Array(4).fill("Vegetables"), Array(2).fill("Chilli"), Array(2).fill("Fallow")
-    );
-    var shuffled = CROP_POOL.slice();
-    for (var si = shuffled.length - 1; si > 0; si--) {
-      var sj = Math.floor(rand() * (si + 1));
-      var tmp = shuffled[si];
-      shuffled[si] = shuffled[sj];
-      shuffled[sj] = tmp;
+    function fieldsFromFeatureCollection(fc) {
+      var list = (fc.features || []).map(function (feat, idx) {
+        var p = feat.properties || {};
+        var gid = String(p.field_id || "").replace(/\D/g, "");
+        var idNum = gid ? parseInt(gid, 10) : idx + 1;
+        var geom = feat.geometry;
+        if (!geom || geom.type !== "Polygon" || !geom.coordinates || !geom.coordinates[0]) return null;
+        var ring = geom.coordinates[0];
+        var coords = ring.map(function (pt) { return [pt[1], pt[0]]; });
+        return {
+          id: idNum,
+          crop: p.crop || "Fallow",
+          farmer: p.farmer || "—",
+          season: p.season || "—",
+          yield_val: p.yield != null ? String(p.yield) : "—",
+          survey: p.survey || ("SY/2024/" + String(idNum).padStart(3, "0")),
+          area: typeof p.area_ac === "number" ? p.area_ac : 10,
+          coords: coords
+        };
+      }).filter(Boolean);
+      list.sort(function (a, b) { return a.id - b.id; });
+      return list;
     }
 
-    var FIELDS = [];
-    var cols = 7, rows = 6;
-    var yieldMap = { Paddy: "5.2 T/Ac", Sugarcane: "28 T/Ac", Groundnut: "1.8 T/Ac", Cotton: "2.1 T/Ac", Mango: "3.5 T/Ac", Vegetables: "8.0 T/Ac", Chilli: "1.2 T/Ac", Fallow: "—" };
-    for (var fi = 0; fi < 42; fi++) {
-      var col = fi % cols, row = Math.floor(fi / cols);
-      var cx = VILLAGE_CENTER[0] + (col - cols / 2) * 0.0045 + (rand() - 0.5) * 0.001;
-      var cy = VILLAGE_CENTER[1] + (row - rows / 2) * 0.004 + (rand() - 0.5) * 0.001;
-      var w = 0.002 + rand() * 0.0025;
-      var h = 0.0018 + rand() * 0.002;
-      var crop = shuffled[fi];
-      var farmer = FARMERS[Math.floor(rand() * FARMERS.length)];
-      var season = crop === "Mango" ? "Perennial" : SEASONS[Math.floor(rand() * SEASONS.length)];
-      FIELDS.push(makeField(fi + 1, cx, cy, w, h, crop, farmer, season, yieldMap[crop], "SY/2024/" + String(fi + 1).padStart(3, "0")));
+    function villageBlobFromFields(fields) {
+      var latMin = Infinity, latMax = -Infinity, lngMin = Infinity, lngMax = -Infinity;
+      fields.forEach(function (f) {
+        f.coords.forEach(function (c) {
+          if (c[0] < latMin) latMin = c[0];
+          if (c[0] > latMax) latMax = c[0];
+          if (c[1] < lngMin) lngMin = c[1];
+          if (c[1] > lngMax) lngMax = c[1];
+        });
+      });
+      var cLat = (latMin + latMax) / 2;
+      var cLng = (lngMin + lngMax) / 2;
+      var halfLat = (latMax - latMin) / 2;
+      var halfLng = (lngMax - lngMin) / 2;
+      var padLat = Math.max(halfLat * 0.14, 0.00035);
+      var padLng = Math.max(halfLng * 0.14, 0.00035);
+      var boundary = [];
+      var npts = 12;
+      for (var vi = 0; vi < npts; vi++) {
+        var angle = (vi / npts) * Math.PI * 2;
+        var r = 1 + Math.sin(vi * 2.3) * 0.1 + Math.cos(vi * 1.7) * 0.08;
+        boundary.push([
+          cLat + Math.sin(angle) * (halfLat + padLat) * r,
+          cLng + Math.cos(angle) * (halfLng + padLng) * r
+        ]);
+      }
+      return { boundary: boundary, center: [cLat, cLng] };
     }
 
+    function makeSyntheticDataset() {
+      function makeField(id, lat, lng, w, h, crop, farmer, season, yield_val, survey) {
+        var noise = function () { return (Math.random() - 0.5) * 0.0008; };
+        var latOff = w / 2, lngOff = h / 2;
+        var coords = [
+          [lat - latOff + noise(), lng - lngOff + noise()],
+          [lat - latOff + noise(), lng + lngOff + noise()],
+          [lat + latOff + noise(), lng + lngOff + noise()],
+          [lat + latOff + noise(), lng - lngOff + noise()]
+        ];
+        var area = Math.round((w * 111000) * (h * 111000) / 4047);
+        return { id: id, crop: crop, farmer: farmer, season: season, yield_val: yield_val, survey: survey, area: Math.max(area, 8), coords: coords };
+      }
+      var seed = 42;
+      function rand() { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; }
+      var VILLAGE_CENTER = DEFAULT_CENTER;
+      var FARMERS = ["K. Ramamurthy", "V. Subramaniam", "T. Lakshmi Devi", "R. Narayana Reddy", "B. Venkata Rao", "P. Srinivasa", "M. Anjaneyulu", "S. Padmavathi", "C. Govinda Reddy", "D. Ramakrishna", "L. Saraswathi", "N. Hanumantha Rao"];
+      var SEASONS = ["Kharif 2024", "Rabi 2024-25", "Kharif 2024", "Rabi 2024-25"];
+      var CROP_POOL = [].concat(
+        Array(16).fill("Paddy"), Array(5).fill("Sugarcane"), Array(6).fill("Groundnut"), Array(4).fill("Cotton"),
+        Array(3).fill("Mango"), Array(4).fill("Vegetables"), Array(2).fill("Chilli"), Array(2).fill("Fallow")
+      );
+      var shuffled = CROP_POOL.slice();
+      for (var si = shuffled.length - 1; si > 0; si--) {
+        var sj = Math.floor(rand() * (si + 1));
+        var tmp = shuffled[si];
+        shuffled[si] = shuffled[sj];
+        shuffled[sj] = tmp;
+      }
+      var FIELDS = [];
+      var cols = 7, rows = 6;
+      var yieldMap = { Paddy: "5.2 T/Ac", Sugarcane: "28 T/Ac", Groundnut: "1.8 T/Ac", Cotton: "2.1 T/Ac", Mango: "3.5 T/Ac", Vegetables: "8.0 T/Ac", Chilli: "1.2 T/Ac", Fallow: "—" };
+      for (var fi = 0; fi < 42; fi++) {
+        var col = fi % cols, row = Math.floor(fi / cols);
+        var cx = VILLAGE_CENTER[0] + (col - cols / 2) * 0.0045 + (rand() - 0.5) * 0.001;
+        var cy = VILLAGE_CENTER[1] + (row - rows / 2) * 0.004 + (rand() - 0.5) * 0.001;
+        var w = 0.002 + rand() * 0.0025;
+        var h = 0.0018 + rand() * 0.002;
+        var crop = shuffled[fi];
+        var farmer = FARMERS[Math.floor(rand() * FARMERS.length)];
+        var season = crop === "Mango" ? "Perennial" : SEASONS[Math.floor(rand() * SEASONS.length)];
+        FIELDS.push(makeField(fi + 1, cx, cy, w, h, crop, farmer, season, yieldMap[crop], "SY/2024/" + String(fi + 1).padStart(3, "0")));
+      }
+      var villageBoundary = [];
+      var npts = 12;
+      for (var vi = 0; vi < npts; vi++) {
+        var angle = (vi / npts) * Math.PI * 2;
+        var r = 0.018 + Math.sin(vi * 2.3) * 0.004 + Math.cos(vi * 1.7) * 0.003;
+        villageBoundary.push([VILLAGE_CENTER[0] + Math.sin(angle) * r, VILLAGE_CENTER[1] + Math.cos(angle) * r * 1.1]);
+      }
+      return { fields: FIELDS, villageBoundary: villageBoundary, villageCenter: VILLAGE_CENTER };
+    }
+
+    function startDashboard(FIELDS, villageBoundary, villageCenter) {
     var cropArea = {};
     for (var fj = 0; fj < FIELDS.length; fj++) {
-      var f = FIELDS[fj];
-      cropArea[f.crop] = (cropArea[f.crop] || 0) + f.area;
+      var f0 = FIELDS[fj];
+      cropArea[f0.crop] = (cropArea[f0.crop] || 0) + f0.area;
     }
     var totalArea = 0;
     Object.keys(cropArea).forEach(function (k) { totalArea += cropArea[k]; });
     var fallowArea = cropArea.Fallow || 0;
     var cultivated = totalArea - fallowArea;
 
-    var map = L.map("map-tirupati", { zoomControl: true, attributionControl: true });
+    var hc = document.getElementById("tpHeaderFieldCount");
+    if (hc) hc.textContent = FIELDS.length + " fields";
+
+    var map = L.map("map-tirupati", { zoomControl: true, attributionControl: true, preferCanvas: true });
     window.__mapTirupati = map;
 
     var TPL = {
-      osm: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap", maxZoom: 19 }),
-      satellite: L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { attribution: "© Esri", maxZoom: 19 }),
-      terrain: L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", { attribution: "© OpenTopoMap", maxZoom: 17 })
+      osm: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap", maxZoom: 19, tileSize: 256 }),
+      satellite: L.tileLayer(
+        "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        { attribution: "© Esri", maxZoom: 19, tileSize: 256 }
+      ),
+      terrain: L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", { attribution: "© OpenTopoMap", maxZoom: 17, tileSize: 256 })
     };
     TPL.osm.addTo(map);
     var currentTpLayer = "osm";
@@ -860,20 +933,17 @@
         tpBasemapBtns.forEach(function (b) {
           b.classList.toggle("tp-tool-active", b === btn);
         });
+        requestAnimationFrame(function () {
+          map.invalidateSize(false);
+          requestAnimationFrame(function () { map.invalidateSize(false); });
+        });
       });
     });
     document.getElementById("btnTpFit").addEventListener("click", function () { fitMapToAllFields([30, 30]); });
 
-    var villageBoundary = [];
-    var npts = 12;
-    for (var vi = 0; vi < npts; vi++) {
-      var angle = (vi / npts) * Math.PI * 2;
-      var r = 0.018 + Math.sin(vi * 2.3) * 0.004 + Math.cos(vi * 1.7) * 0.003;
-      villageBoundary.push([VILLAGE_CENTER[0] + Math.sin(angle) * r, VILLAGE_CENTER[1] + Math.cos(angle) * r * 1.1]);
-    }
     L.polygon(villageBoundary, { color: "#4ade80", weight: 2.5, dashArray: "8,6", fillColor: "#4ade80", fillOpacity: 0.04 })
       .addTo(map).bindTooltip("Chinagottigallu Village Boundary", { permanent: false });
-    L.marker(VILLAGE_CENTER, {
+    L.marker(villageCenter, {
       icon: L.divIcon({
         className: "",
         html: "<div style=\"background:#0a1a0f;color:#4ade80;border:1px solid #4ade80;padding:3px 10px;border-radius:4px;font-family:monospace;font-size:10px;font-weight:700\">CHINAGOTTIGALLU</div>",
@@ -894,7 +964,7 @@
     }
 
     function fieldPolygonStyle(f, visible, searchMatch) {
-      var col = CROP_COLORS[f.crop];
+      var col = cropColor(f.crop);
       return {
         color: searchMatch ? "#fbbf24" : col,
         weight: searchMatch ? 3 : (visible ? 1.5 : 0.3),
@@ -1067,7 +1137,7 @@
     }
 
     function buildPopup(f) {
-      var col = CROP_COLORS[f.crop];
+      var col = cropColor(f.crop);
       return "<div class=\"field-popup\">" +
         "<div class=\"popup-crop-badge\" style=\"background:" + col + "22;color:" + col + ";border:1px solid " + col + "\">" + f.crop + "</div>" +
         "<div class=\"popup-title\">Field #" + f.id + " — " + f.survey + "</div>" +
@@ -1090,7 +1160,7 @@
       allPolygons = [];
       FIELDS.forEach(function (f) {
         var visible = filter === "all" || f.crop === filter;
-        var col = CROP_COLORS[f.crop];
+        var col = cropColor(f.crop);
         var latlngs = f.coords.map(function (c) { return [c[0], c[1]]; });
         var poly = L.polygon(latlngs, {
           color: col,
@@ -1151,7 +1221,7 @@
       var filtered = filter === "all" ? FIELDS : FIELDS.filter(function (f) { return f.crop === filter; });
       document.getElementById("fieldListCount").textContent = filtered.length + " fields";
       list.innerHTML = filtered.map(function (f) {
-        var col = CROP_COLORS[f.crop];
+        var col = cropColor(f.crop);
         return "<div class=\"tp-field-item\" id=\"fi-" + f.id + "\" style=\"--item-color:" + col + "\" data-field-id=\"" + f.id + "\">" +
           "<div class=\"tp-field-dot\"></div><div class=\"tp-field-info\">" +
           "<div class=\"tp-field-name\">Field #" + f.id + "</div>" +
@@ -1201,7 +1271,7 @@
     grid.querySelector(".tp-filter-all").addEventListener("click", function () { applyFilter("all"); });
     CROP_ORDER.forEach(function (c) {
       var cnt = FIELDS.filter(function (f) { return f.crop === c; }).length;
-      var col = CROP_COLORS[c];
+      var col = cropColor(c);
       var b = document.createElement("button");
       b.type = "button";
       b.className = "tp-filter-btn";
@@ -1219,7 +1289,7 @@
       document.getElementById("cropBars").innerHTML = sorted.map(function (ent) {
         var cr = ent[0], ar = ent[1];
         var pct = ((ar / maxArea) * 100).toFixed(0);
-        var col = CROP_COLORS[cr];
+        var col = cropColor(cr);
         return "<div><div class=\"tp-bar-label\"><strong>" + cr + "</strong><span>" + ar + " Ac · " + ((ar / totalArea) * 100).toFixed(1) + "%</span></div>" +
           "<div class=\"tp-bar-track\"><div class=\"tp-bar-fill\" style=\"width:" + pct + "%;background:" + col + "\"></div></div></div>";
       }).join("");
@@ -1228,7 +1298,7 @@
     function renderLegend() {
       document.getElementById("mapLegend").innerHTML =
         CROP_ORDER.map(function (cr) {
-          return "<div class=\"tp-legend-item\"><div class=\"tp-legend-dot\" style=\"background:" + CROP_COLORS[cr] + "\"></div>" + cr + "</div>";
+          return "<div class=\"tp-legend-item\"><div class=\"tp-legend-dot\" style=\"background:" + cropColor(cr) + "\"></div>" + cr + "</div>";
         }).join("") +
         "<div class=\"tp-legend-item\" style=\"margin-left:auto;color:#6b9e78;font-size:10px;font-family:monospace\">Village boundary (approx.)</div>";
     }
@@ -1255,6 +1325,24 @@
         runFieldSearch();
       }
     });
+    }
+
+    fetch(FIELDS_GEOJSON, { cache: "default" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (fc) {
+        var arr = fieldsFromFeatureCollection(fc);
+        if (!arr.length) throw new Error("no features");
+        var vb = villageBlobFromFields(arr);
+        startDashboard(arr, vb.boundary, vb.center);
+      })
+      .catch(function (err) {
+        console.warn("Chinagottigallu GeoJSON not used:", err && err.message ? err.message : err);
+        var syn = makeSyntheticDataset();
+        startDashboard(syn.fields, syn.villageBoundary, syn.villageCenter);
+      });
   }
 })();
   </script>
