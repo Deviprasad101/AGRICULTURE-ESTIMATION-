@@ -3,42 +3,57 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Andhra Pradesh — Administrative Boundaries Map</title>
-
-  <!-- Leaflet CSS (CDN) -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-
+  <title>AP Agriculture — State boundaries & Chinagottigallu crop dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <style>
-    /* -------------------------------------------------------------------------
-       Layout: fullscreen map with a floating control panel
-       ------------------------------------------------------------------------- */
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: system-ui, sans-serif; }
+
+    /* ─── App tabs ─── */
+    .app-tabs {
+      display: flex;
+      gap: 0;
+      background: #0f172a;
+      border-bottom: 1px solid #334155;
+      position: sticky;
+      top: 0;
+      z-index: 2000;
+    }
+    .app-tabs button {
+      flex: 1;
+      max-width: 400px;
+      padding: 14px 20px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+    }
+    .app-tabs button:hover { color: #e2e8f0; background: rgba(255,255,255,0.05); }
+    .app-tabs button.active {
+      color: #4ade80;
+      border-bottom-color: #4ade80;
+      background: rgba(74, 222, 128, 0.08);
     }
 
-    html,
-    body {
-      margin: 0;
-      height: 100%;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
-      color: #1a1a1a;
-    }
+    .view { display: none; }
+    .view.active { display: block; }
 
-    #map {
+    /* ═══ VIEW: Andhra Pradesh ═══ */
+    #view-ap {
+      position: relative;
+      height: calc(100vh - 49px);
+      background: #f8fafc;
+    }
+    #view-ap #map-ap {
       position: absolute;
       inset: 0;
       z-index: 0;
     }
-
-    /* Top-right panel: layer toggles + legend */
-    .panel {
+    #view-ap .ap-panel {
       position: absolute;
       top: 12px;
       right: 12px;
@@ -50,502 +65,1198 @@
       padding: 14px 16px;
       font-size: 13px;
       line-height: 1.45;
+      color: #1a1a1a;
     }
+    #view-ap .ap-panel h1 { margin: 0 0 10px; font-size: 15px; font-weight: 700; }
+    #view-ap .ap-panel section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e8e8e8; }
+    #view-ap .ap-panel section:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+    #view-ap .ap-panel h2 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #666; font-weight: 600; }
+    #view-ap .toggle-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; cursor: pointer; user-select: none; }
+    #view-ap .toggle-row input { width: 16px; height: 16px; accent-color: #2563eb; }
+    #view-ap .legend-item { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+    #view-ap .swatch { width: 28px; height: 4px; border-radius: 2px; flex-shrink: 0; }
+    #view-ap .swatch.state { background: #dc2626; height: 5px; }
+    #view-ap .swatch.district { background: #2563eb; }
+    #view-ap .swatch.mandal { background: #0f766e; height: 3px; }
+    #view-ap .status { font-size: 12px; color: #555; margin-top: 8px; }
+    #view-ap .status.error { color: #b91c1c; }
+    #view-ap .panel-hint { margin: 10px 0 0; font-size: 11px; color: #666; line-height: 1.4; }
+    #view-ap .popup-detail { max-height: 220px; overflow: auto; font-size: 12px; }
+    #view-ap .popup-detail dt { font-weight: 600; margin-top: 6px; color: #444; }
+    #view-ap .popup-detail dd { margin: 0; word-break: break-word; }
 
-    .panel h1 {
+    /* ═══ VIEW: Tirupati dashboard (scoped) ═══ */
+    #view-tirupati {
+      --bg: #0a1a0f;
+      --surface: #0f2418;
+      --surface2: #152e1e;
+      --border: #1e4a2a;
+      --accent: #4ade80;
+      --accent2: #86efac;
+      --gold: #fbbf24;
+      --teal: #2dd4bf;
+      --text: #e2fce8;
+      --muted: #6b9e78;
+      --fallow: #9ca3af;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", sans-serif;
+      min-height: calc(100vh - 49px);
+      overflow-x: hidden;
+    }
+    #view-tirupati * { margin: 0; padding: 0; box-sizing: border-box; }
+    #view-tirupati .tp-header {
+      background: linear-gradient(135deg, #0a2010 0%, #0f2e18 50%, #081508 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.6);
+    }
+    #view-tirupati .tp-header-inner {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      height: 64px;
+    }
+    #view-tirupati .tp-badge {
+      background: var(--accent);
+      color: #0a1a0f;
+      font-family: "Space Mono", monospace;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 3px;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+    #view-tirupati .tp-header-title { flex: 1; }
+    #view-tirupati .tp-header-title h1 { font-size: 16px; font-weight: 700; color: var(--accent2); line-height: 1.2; }
+    #view-tirupati .tp-header-title p { font-size: 11px; color: var(--muted); font-family: "Space Mono", monospace; }
+    #view-tirupati .tp-meta { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    #view-tirupati .tp-chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #view-tirupati .tp-chip span { color: var(--accent); font-weight: 700; }
+    #view-tirupati .tp-main {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr;
+      gap: 16px;
+      min-height: calc(100vh - 49px - 64px);
+    }
+    #view-tirupati .tp-stats-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+    #view-tirupati .tp-stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    #view-tirupati .tp-stat-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--card-accent, var(--accent));
+    }
+    #view-tirupati .tp-stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; font-family: "Space Mono", monospace; }
+    #view-tirupati .tp-stat-value { font-size: 28px; font-weight: 700; color: var(--card-accent, var(--accent)); line-height: 1; margin-bottom: 4px; }
+    #view-tirupati .tp-stat-sub { font-size: 11px; color: var(--muted); }
+    #view-tirupati .tp-sidebar { display: flex; flex-direction: column; gap: 14px; }
+    #view-tirupati .tp-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    #view-tirupati .tp-panel-hd {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface2);
+    }
+    #view-tirupati .tp-panel-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent);
+      font-family: "Space Mono", monospace;
+    }
+    #view-tirupati .tp-panel-count { font-family: "Space Mono", monospace; font-size: 11px; color: var(--muted); }
+    #view-tirupati .tp-panel-body { padding: 14px; }
+    #view-tirupati .tp-filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    #view-tirupati .tp-filter-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1.5px solid transparent;
+      background: var(--surface2);
+      cursor: pointer;
+      font-family: "DM Sans", sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: left;
+    }
+    #view-tirupati .tp-filter-btn:hover { border-color: var(--btn-color); color: var(--text); }
+    #view-tirupati .tp-filter-btn.tp-active {
+      border-color: var(--btn-color);
+      background: color-mix(in srgb, var(--btn-color) 15%, transparent);
+      color: var(--text);
+    }
+    #view-tirupati .tp-filter-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--btn-color); flex-shrink: 0; }
+    #view-tirupati .tp-filter-count { margin-left: auto; font-family: "Space Mono", monospace; font-size: 10px; color: var(--btn-color); font-weight: 700; }
+    #view-tirupati .tp-filter-all { grid-column: 1 / -1; justify-content: center; color: var(--accent); --btn-color: var(--accent); border-color: var(--accent); }
+    #view-tirupati .tp-crop-bars { display: flex; flex-direction: column; gap: 10px; }
+    #view-tirupati .tp-bar-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; color: var(--muted); }
+    #view-tirupati .tp-bar-label strong { color: var(--text); font-size: 12px; }
+    #view-tirupati .tp-bar-label span { font-family: "Space Mono", monospace; font-size: 10px; }
+    #view-tirupati .tp-bar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    #view-tirupati .tp-bar-fill { height: 100%; border-radius: 3px; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+    #view-tirupati .tp-field-list { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; }
+    #view-tirupati .tp-field-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      background: var(--surface2);
+    }
+    #view-tirupati .tp-field-item:hover, #view-tirupati .tp-field-item.tp-fi-active {
+      border-color: var(--item-color, var(--accent));
+      background: color-mix(in srgb, var(--item-color, var(--accent)) 10%, transparent);
+    }
+    #view-tirupati .tp-field-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--item-color, var(--accent)); flex-shrink: 0; }
+    #view-tirupati .tp-field-info { flex: 1; min-width: 0; }
+    #view-tirupati .tp-field-name { font-size: 12px; font-weight: 600; }
+    #view-tirupati .tp-field-meta { font-size: 10px; color: var(--muted); font-family: "Space Mono", monospace; }
+    #view-tirupati .tp-field-area { font-size: 11px; color: var(--item-color, var(--accent)); font-family: "Space Mono", monospace; font-weight: 700; white-space: nowrap; }
+    #view-tirupati .tp-map-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #view-tirupati .tp-map-hd {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    #view-tirupati .tp-map-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); font-family: "Space Mono", monospace; }
+    #view-tirupati .tp-map-head-main { flex: 1; min-width: 0; }
+    #view-tirupati .tp-map-tools.tp-map-tools-search { margin-top: 10px; justify-content: flex-start; }
+    #view-tirupati .tp-map-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    #view-tirupati .tp-search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 8px;
+      flex: 1;
+      min-width: 140px;
+      max-width: 320px;
+    }
+    #view-tirupati .tp-search-input {
+      flex: 1;
+      min-width: 0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 12px;
+      font-family: "DM Sans", sans-serif;
+    }
+    #view-tirupati .tp-search-input::placeholder { color: var(--muted); opacity: 0.85; }
+    #view-tirupati .tp-search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+    }
+    #view-tirupati .tp-search-btn {
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: "Space Mono", monospace;
+      white-space: nowrap;
+    }
+    #view-tirupati .tp-search-btn:hover { background: color-mix(in srgb, var(--accent) 15%, transparent); }
+    #view-tirupati .tp-search-msg {
+      width: 100%;
+      font-size: 11px;
+      color: var(--muted);
+      font-family: "Space Mono", monospace;
+      margin-top: 6px;
+      min-height: 1.2em;
+    }
+    #view-tirupati .tp-search-msg.tp-search-err { color: #f87171; }
+    #view-tirupati .tp-search-msg.tp-search-ok { color: var(--accent2); }
+    #view-tirupati .tp-map-tool {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: "Space Mono", monospace;
+    }
+    #view-tirupati .tp-map-tool:hover, #view-tirupati .tp-map-tool.tp-tool-active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+    }
+    #view-tirupati #map-tirupati { flex: 1; min-height: 520px; }
+    /* Leaflet popups live under #view-tirupati; global * reset strips default margins — restore here */
+    #view-tirupati .leaflet-popup-content-wrapper {
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #view-tirupati .leaflet-popup-content {
+      margin: 0 !important;
+      padding: 14px 36px 16px 16px !important;
+      box-sizing: border-box;
+      line-height: 1.35;
+    }
+    #view-tirupati a.leaflet-popup-close-button {
+      width: 28px;
+      height: 28px;
+      padding: 6px;
+      font-size: 20px;
+      line-height: 1;
+      top: 8px;
+      right: 8px;
+    }
+    #view-tirupati .field-popup { font-family: "DM Sans", sans-serif; min-width: 200px; max-width: 260px; }
+    #view-tirupati .popup-crop-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
       margin: 0 0 10px;
+      text-transform: uppercase;
+    }
+    #view-tirupati .popup-title {
       font-size: 15px;
       font-weight: 700;
-      letter-spacing: -0.02em;
+      margin: 0 0 12px;
+      color: #1a2e1a;
+      line-height: 1.25;
     }
-
-    .panel section {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid #e8e8e8;
-    }
-
-    .panel section:first-of-type {
-      margin-top: 0;
-      padding-top: 0;
-      border-top: none;
-    }
-
-    .panel h2 {
-      margin: 0 0 8px;
-      font-size: 11px;
+    #view-tirupati .popup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+    #view-tirupati .popup-row label {
+      font-size: 10px;
+      color: #666;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #666;
-      font-weight: 600;
+      display: block;
+      letter-spacing: 0.04em;
+      margin: 0 0 3px;
     }
-
-    .toggle-row {
+    #view-tirupati .popup-row value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a2e1a;
+      display: block;
+      margin: 0;
+      padding: 0;
+    }
+    #view-tirupati .tp-legend {
       display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    #view-tirupati .tp-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+    #view-tirupati .tp-legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+    #view-tirupati .tp-filter-banner {
+      padding: 8px 14px;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--accent2);
+      display: none;
       align-items: center;
       gap: 8px;
-      margin: 6px 0;
+      margin-bottom: 8px;
+    }
+    #view-tirupati .tp-filter-banner.tp-show { display: flex; }
+    #view-tirupati .tp-clear-filter {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--accent);
       cursor: pointer;
-      user-select: none;
+      font-size: 16px;
+      padding: 0 2px;
     }
-
-    .toggle-row input {
-      width: 16px;
-      height: 16px;
-      accent-color: #2563eb;
+    @media (max-width: 1100px) {
+      #view-tirupati .tp-main { grid-template-columns: 1fr; }
+      #view-tirupati .tp-stats-row { grid-template-columns: repeat(3, 1fr); }
     }
-
-    /* Legend swatches */
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 6px 0;
-    }
-
-    .swatch {
-      width: 28px;
-      height: 4px;
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
-
-    .swatch.state {
-      background: #dc2626;
-      height: 5px;
-    }
-
-    .swatch.district {
-      background: #2563eb;
-    }
-
-    .swatch.mandal {
-      background: #0f766e;
-      height: 3px;
-    }
-
-    .status {
-      font-size: 12px;
-      color: #555;
-      margin-top: 8px;
-    }
-
-    .status.error {
-      color: #b91c1c;
-    }
-
-    .panel-hint {
-      margin: 10px 0 0;
-      font-size: 11px;
-      color: #666;
-      line-height: 1.4;
-    }
-
-    /* Leaflet popup: readable detail list */
-    .popup-detail {
-      max-height: 220px;
-      overflow: auto;
-      font-size: 12px;
-    }
-
-    .popup-detail dt {
-      font-weight: 600;
-      margin-top: 6px;
-      color: #444;
-    }
-
-    .popup-detail dd {
-      margin: 0 0 0 0;
-      word-break: break-word;
+    @media (max-width: 700px) {
+      #view-tirupati .tp-stats-row { grid-template-columns: 1fr 1fr; }
+      #view-tirupati .tp-meta { display: none; }
     }
   </style>
 </head>
 <body>
-  <!--
-    Local tip: opening this file as file:// may block fetch() for .geojson (browser security).
-    Serve the folder over HTTP, e.g. PowerShell:  python -m http.server 8080
-    Then open http://localhost:8080/index.html
-    Serve over HTTP for GeoJSON fetch. By default state, district, and mandal boundaries are shown.
-  -->
-  <div id="map" role="application" aria-label="Interactive map of Andhra Pradesh"></div>
+  <nav class="app-tabs" role="tablist" aria-label="Application views">
+    <button type="button" class="active" role="tab" aria-selected="true" data-view="ap" id="tab-ap">Andhra Pradesh — boundaries</button>
+    <button type="button" role="tab" aria-selected="false" data-view="tirupati" id="tab-tirupati">Chinagottigallu — crop dashboard</button>
+  </nav>
 
-  <aside class="panel" aria-label="Map controls">
-    <h1>Andhra Pradesh boundaries</h1>
+  <!-- ═══ AP state map ═══ -->
+  <div id="view-ap" class="view active" role="tabpanel" aria-labelledby="tab-ap">
+    <div id="map-ap" role="application" aria-label="Andhra Pradesh boundaries map"></div>
+    <aside class="ap-panel" aria-label="Map controls">
+      <h1>Andhra Pradesh boundaries</h1>
+      <section>
+        <h2>Layers</h2>
+        <label class="toggle-row"><input type="checkbox" id="toggle-state" checked /><span>State boundary</span></label>
+        <label class="toggle-row"><input type="checkbox" id="toggle-districts" checked /><span>District boundaries</span></label>
+        <label class="toggle-row"><input type="checkbox" id="toggle-mandals" checked /><span>Mandal boundaries</span></label>
+        <p class="panel-hint">Serve over HTTP for GeoJSON. Click state outline to solo state layer; use checkboxes to restore districts/mandals.</p>
+      </section>
+      <section>
+        <h2>Legend</h2>
+        <div class="legend-item"><span class="swatch state" aria-hidden="true"></span><span>State — red</span></div>
+        <div class="legend-item"><span class="swatch district" aria-hidden="true"></span><span>District — blue</span></div>
+        <div class="legend-item"><span class="swatch mandal" aria-hidden="true"></span><span>Mandal — teal</span></div>
+      </section>
+      <p id="load-status" class="status" aria-live="polite">Loading layers…</p>
+    </aside>
+  </div>
 
-    <section aria-labelledby="layers-heading">
-      <h2 id="layers-heading">Layers</h2>
-      <label class="toggle-row">
-        <input type="checkbox" id="toggle-state" checked />
-        <span>State boundary</span>
-      </label>
-      <label class="toggle-row">
-        <input type="checkbox" id="toggle-districts" checked />
-        <span>District boundaries</span>
-      </label>
-      <label class="toggle-row">
-        <input type="checkbox" id="toggle-mandals" checked />
-        <span>Mandal boundaries</span>
-      </label>
-      <p class="panel-hint">Click a state outline to show only the state layer; use the checkboxes to show districts or mandals again.</p>
-    </section>
-
-    <section aria-labelledby="legend-heading">
-      <h2 id="legend-heading">Legend</h2>
-      <div class="legend-item">
-        <span class="swatch state" aria-hidden="true"></span>
-        <span>State — thick red outline</span>
+  <!-- ═══ Tirupati dashboard (map init when tab opens) ═══ -->
+  <div id="view-tirupati" class="view" role="tabpanel" aria-labelledby="tab-tirupati" hidden>
+    <header class="tp-header">
+      <div class="tp-header-inner">
+        <div class="tp-badge">AGRI-GIS</div>
+        <div class="tp-header-title">
+          <h1>Chinagottigallu Village — Crop Field Analysis</h1>
+          <p>Pellakuru Mandal · Tirupati District · Andhra Pradesh</p>
+        </div>
+        <div class="tp-meta">
+          <div class="tp-chip">Survey Year <span>2024–25</span></div>
+          <div class="tp-chip">Kharif + Rabi <span>Seasons</span></div>
+          <div class="tp-chip">Demo <span>42 fields</span></div>
+        </div>
       </div>
-      <div class="legend-item">
-        <span class="swatch district" aria-hidden="true"></span>
-        <span>District — medium blue outline</span>
+    </header>
+    <div class="tp-main">
+      <div class="tp-stats-row">
+        <div class="tp-stat-card" style="--card-accent: var(--accent)">
+          <div class="tp-stat-label">Total Fields</div>
+          <div class="tp-stat-value" id="totalFields">42</div>
+          <div class="tp-stat-sub">across village boundary</div>
+        </div>
+        <div class="tp-stat-card" style="--card-accent: var(--gold)">
+          <div class="tp-stat-label">Cultivated Area</div>
+          <div class="tp-stat-value" id="cultivatedArea">0</div>
+          <div class="tp-stat-sub">acres under crops</div>
+        </div>
+        <div class="tp-stat-card" style="--card-accent: #4ade80">
+          <div class="tp-stat-label">Dominant Crop</div>
+          <div class="tp-stat-value" style="font-size:20px" id="dominantCrop">—</div>
+          <div class="tp-stat-sub" id="statDominantSub">—</div>
+        </div>
+        <div class="tp-stat-card" style="--card-accent: var(--teal)">
+          <div class="tp-stat-label">Avg. Field Size</div>
+          <div class="tp-stat-value" id="avgFieldSize">0</div>
+          <div class="tp-stat-sub">acres per field</div>
+        </div>
+        <div class="tp-stat-card" style="--card-accent: var(--fallow)">
+          <div class="tp-stat-label">Fallow Land</div>
+          <div class="tp-stat-value" id="fallowArea">0</div>
+          <div class="tp-stat-sub">acres uncultivated</div>
+        </div>
       </div>
-      <div class="legend-item">
-        <span class="swatch mandal" aria-hidden="true"></span>
-        <span>Mandal — teal outline</span>
+      <div class="tp-sidebar">
+        <div class="tp-panel">
+          <div class="tp-panel-hd">
+            <div class="tp-panel-title">Filter by Crop</div>
+            <div class="tp-panel-count">8 types</div>
+          </div>
+          <div class="tp-panel-body">
+            <div class="tp-filter-banner" id="activeFilterInfo">
+              <span id="activeFilterText"></span>
+              <button type="button" class="tp-clear-filter" id="btnClearFilter" aria-label="Clear filter">✕</button>
+            </div>
+            <div class="tp-filter-grid" id="tpFilterGrid"></div>
+          </div>
+        </div>
+        <div class="tp-panel">
+          <div class="tp-panel-hd">
+            <div class="tp-panel-title">Area Distribution</div>
+            <div class="tp-panel-count">acres</div>
+          </div>
+          <div class="tp-panel-body"><div class="tp-crop-bars" id="cropBars"></div></div>
+        </div>
+        <div class="tp-panel" style="flex:1">
+          <div class="tp-panel-hd">
+            <div class="tp-panel-title">Field Registry</div>
+            <div class="tp-panel-count" id="fieldListCount">42 fields</div>
+          </div>
+          <div class="tp-panel-body" style="padding:10px"><div class="tp-field-list" id="fieldList"></div></div>
+        </div>
       </div>
-      <p class="status" style="margin-top:8px;color:#666;">Fills are transparent (no obscuring the basemap).</p>
-    </section>
+      <div class="tp-map-wrap">
+        <div class="tp-map-hd">
+          <div class="tp-map-head-main">
+            <div class="tp-map-title">Crop Field Map — Chinagottigallu</div>
+            <div class="tp-map-tools tp-map-tools-search">
+              <div class="tp-search-wrap">
+                <input type="search" id="tpFieldSearch" class="tp-search-input" placeholder="Field #, farmer, crop, or village name…" autocomplete="off" aria-label="Search fields or places" />
+                <button type="button" class="tp-search-btn" id="tpSearchBtn">Search</button>
+              </div>
+            </div>
+            <div class="tp-search-msg" id="tpSearchMsg" aria-live="polite"></div>
+          </div>
+          <div class="tp-map-tools">
+            <button type="button" class="tp-map-tool tp-tool-active" data-tplayer="osm">Street</button>
+            <button type="button" class="tp-map-tool" data-tplayer="satellite">Satellite</button>
+            <button type="button" class="tp-map-tool" data-tplayer="terrain">Terrain</button>
+            <button type="button" class="tp-map-tool" id="btnTpFit">⊙ Fit</button>
+          </div>
+        </div>
+        <div id="map-tirupati"></div>
+        <div class="tp-legend" id="mapLegend"></div>
+      </div>
+    </div>
+  </div>
 
-    <p id="load-status" class="status" aria-live="polite">Loading layers…</p>
-  </aside>
-
-  <!-- Leaflet JS -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
-    (function () {
-      "use strict";
+(function () {
+  "use strict";
 
-      /* -----------------------------------------------------------------------
-         Configuration: GeoJSON URLs and visual styles
-         State: ap_boundary.geojson — single AP outline (from build_ap_boundary.py).
-         Districts: geojson_ap.geojson. Mandals: ap_mandals.geojson (build_ap_mandals.py).
-         ----------------------------------------------------------------------- */
-      var GEOJSON_URLS = {
-        state: "ap_boundary.geojson",
-        districts: "geojson_ap.geojson",
-        mandals: "ap_mandals.geojson"
-      };
+  var tabAp = document.getElementById("tab-ap");
+  var tabTp = document.getElementById("tab-tirupati");
+  var viewAp = document.getElementById("view-ap");
+  var viewTp = document.getElementById("view-tirupati");
 
-      var STYLES = {
-        state: {
-          color: "#dc2626",
-          weight: 4,
-          opacity: 1,
-          fill: true,
-          fillColor: "#000000",
-          fillOpacity: 0
-        },
-        districts: {
-          color: "#2563eb",
-          weight: 2,
-          opacity: 0.95,
-          fill: true,
-          fillColor: "#000000",
-          fillOpacity: 0
-        },
-        mandals: {
-          /* Teal: reads clearly on OSM greens and under blue district lines */
-          color: "#0f766e",
-          weight: 2,
-          opacity: 1,
-          fill: true,
-          fillColor: "#000000",
-          fillOpacity: 0
-        }
-      };
-
-      var HIGHLIGHT = {
-        state: { weight: 6, color: "#ef4444", fillOpacity: 0.08 },
-        districts: { weight: 3, color: "#3b82f6", fillOpacity: 0.06 },
-        mandals: { weight: 3, color: "#14b8a6", fillOpacity: 0.06 }
-      };
-
-      /* -----------------------------------------------------------------------
-         Resolve a display name from common GeoJSON property keys
-         (Indian admin shapefiles often use NAME_1, DISTRICT, etc.)
-         ----------------------------------------------------------------------- */
-      function getFeatureName(properties) {
-        if (!properties || typeof properties !== "object") return "Unknown";
-        /* Prefer smallest admin unit first (district / mandal before state st_nm). */
-        var keys = [
-          "name", "NAME", "Name",
-          "MANDAL", "mandal", "MNAME", "mname", "SUB_DIST", "SUBDIST",
-          "DISTRICT", "DISTRICT_N", "district", "dtname", "DTNAME",
-          "NAME_1", "NAME_2", "NAME_3",
-          "STATE", "ST_NM", "st_nm"
-        ];
-        for (var i = 0; i < keys.length; i++) {
-          var v = properties[keys[i]];
-          if (v !== undefined && v !== null && String(v).trim() !== "") {
-            return String(v).trim();
-          }
-        }
-        var first = Object.keys(properties)[0];
-        if (first) return String(properties[first]);
-        return "Feature";
+  function showView(which) {
+    var isAp = which === "ap";
+    tabAp.classList.toggle("active", isAp);
+    tabTp.classList.toggle("active", !isAp);
+    tabAp.setAttribute("aria-selected", isAp);
+    tabTp.setAttribute("aria-selected", !isAp);
+    viewAp.classList.toggle("active", isAp);
+    viewTp.classList.toggle("active", !isAp);
+    viewAp.hidden = !isAp;
+    viewTp.hidden = isAp;
+    if (isAp && window.__mapAp) {
+      setTimeout(function () { window.__mapAp.invalidateSize(); }, 150);
+    }
+    if (!isAp) {
+      if (!window.__tirupatiInited) {
+        initTirupatiDashboard();
+        window.__tirupatiInited = true;
       }
+      setTimeout(function () {
+        if (window.__mapTirupati) window.__mapTirupati.invalidateSize();
+      }, 150);
+    }
+  }
 
-      /* -----------------------------------------------------------------------
-         Build HTML for popup: feature name + definition list of properties
-         ----------------------------------------------------------------------- */
-      function popupContent(layerType, properties, displayName) {
-        var dl = document.createElement("dl");
-        dl.className = "popup-detail";
-        var dtTitle = document.createElement("dt");
-        dtTitle.textContent = "Name";
-        var ddTitle = document.createElement("dd");
-        ddTitle.textContent = displayName;
-        dl.appendChild(dtTitle);
-        dl.appendChild(ddTitle);
-        var dtType = document.createElement("dt");
-        dtType.textContent = "Layer";
-        var ddType = document.createElement("dd");
-        ddType.textContent =
-          layerType === "state"
-            ? "State boundary"
-            : layerType === "districts"
-              ? "District boundary"
-              : "Mandal boundary";
-        dl.appendChild(dtType);
-        dl.appendChild(ddType);
-        if (properties && typeof properties === "object") {
-          Object.keys(properties).forEach(function (key) {
-            var dt = document.createElement("dt");
-            dt.textContent = key;
-            var dd = document.createElement("dd");
-            dd.textContent = String(properties[key]);
-            dl.appendChild(dt);
-            dl.appendChild(dd);
-          });
-        }
-        return dl;
+  tabAp.addEventListener("click", function () { showView("ap"); });
+  tabTp.addEventListener("click", function () { showView("tirupati"); });
+
+  /* ─── Andhra Pradesh map ─── */
+  (function apMap() {
+    var GEOJSON_URLS = {
+      state: "ap_boundary.geojson",
+      districts: "geojson_ap.geojson",
+      mandals: "ap_mandals.geojson"
+    };
+    var STYLES = {
+      state: { color: "#dc2626", weight: 4, opacity: 1, fill: true, fillColor: "#000000", fillOpacity: 0 },
+      districts: { color: "#2563eb", weight: 2, opacity: 0.95, fill: true, fillColor: "#000000", fillOpacity: 0 },
+      mandals: { color: "#0f766e", weight: 2, opacity: 1, fill: true, fillColor: "#000000", fillOpacity: 0 }
+    };
+    var HIGHLIGHT = {
+      state: { weight: 6, color: "#ef4444", fillOpacity: 0.08 },
+      districts: { weight: 3, color: "#3b82f6", fillOpacity: 0.06 },
+      mandals: { weight: 3, color: "#14b8a6", fillOpacity: 0.06 }
+    };
+
+    function getFeatureName(properties) {
+      if (!properties || typeof properties !== "object") return "Unknown";
+      var keys = ["name", "NAME", "Name", "MANDAL", "mandal", "MNAME", "mname", "SUB_DIST", "SUBDIST",
+        "DISTRICT", "DISTRICT_N", "district", "dtname", "DTNAME", "NAME_1", "NAME_2", "NAME_3", "STATE", "ST_NM", "st_nm"];
+      for (var i = 0; i < keys.length; i++) {
+        var v = properties[keys[i]];
+        if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
       }
+      var first = Object.keys(properties)[0];
+      return first ? String(properties[first]) : "Feature";
+    }
 
-      /* -----------------------------------------------------------------------
-         Map init: OSM basemap, scale bar, canvas-friendly rendering for many vectors
-         preferCanvas improves performance when many polygons are on screen.
-         ----------------------------------------------------------------------- */
-      var map = L.map("map", {
-        preferCanvas: true,
-        zoomControl: true,
-        minZoom: 5,
-        maxZoom: 18
+    function popupContent(layerType, properties, displayName) {
+      var dl = document.createElement("dl");
+      dl.className = "popup-detail";
+      var dtTitle = document.createElement("dt");
+      dtTitle.textContent = "Name";
+      var ddTitle = document.createElement("dd");
+      ddTitle.textContent = displayName;
+      dl.appendChild(dtTitle);
+      dl.appendChild(ddTitle);
+      var dtType = document.createElement("dt");
+      dtType.textContent = "Layer";
+      var ddType = document.createElement("dd");
+      ddType.textContent = layerType === "state" ? "State boundary" : layerType === "districts" ? "District boundary" : "Mandal boundary";
+      dl.appendChild(dtType);
+      dl.appendChild(ddType);
+      if (properties && typeof properties === "object") {
+        Object.keys(properties).forEach(function (key) {
+          var dt = document.createElement("dt");
+          dt.textContent = key;
+          var dd = document.createElement("dd");
+          dd.textContent = String(properties[key]);
+          dl.appendChild(dt);
+          dl.appendChild(dd);
+        });
+      }
+      return dl;
+    }
+
+    var mapAp = L.map("map-ap", { preferCanvas: true, zoomControl: true, minZoom: 5, maxZoom: 18 });
+    window.__mapAp = mapAp;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(mapAp);
+    L.control.scale({ imperial: false, metric: true, maxWidth: 200 }).addTo(mapAp);
+    mapAp.setView([15.5, 79.5], 7);
+
+    var layers = { state: null, districts: null, mandals: null };
+    var loadStatusEl = document.getElementById("load-status");
+
+    function setLoadMessage(text, isError) {
+      loadStatusEl.textContent = text;
+      loadStatusEl.className = "status" + (isError ? " error" : "");
+    }
+
+    function showOnlyStateBoundary() {
+      if (layers.districts && mapAp.hasLayer(layers.districts)) mapAp.removeLayer(layers.districts);
+      if (layers.mandals && mapAp.hasLayer(layers.mandals)) mapAp.removeLayer(layers.mandals);
+      document.getElementById("toggle-districts").checked = false;
+      document.getElementById("toggle-mandals").checked = false;
+      if (layers.state && !mapAp.hasLayer(layers.state)) mapAp.addLayer(layers.state);
+      document.getElementById("toggle-state").checked = true;
+    }
+
+    function wireLayerEvents(geoJsonLayer, layerType, baseStyle) {
+      geoJsonLayer.eachLayer(function (layer) {
+        var props = layer.feature && layer.feature.properties;
+        var name = getFeatureName(props);
+        layer.bindTooltip(name, { sticky: true, direction: "auto", opacity: 0.95, className: "ap-tooltip" });
+        layer.on("mouseover", function () {
+          layer.setStyle(Object.assign({}, baseStyle, HIGHLIGHT[layerType]));
+          if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) layer.bringToFront();
+        });
+        layer.on("mouseout", function () { layer.setStyle(baseStyle); });
+        layer.bindPopup(popupContent(layerType, props, name), { maxWidth: 280 });
+        layer.on("click", function (e) {
+          L.DomEvent.stopPropagation(e);
+          if (layerType === "state") showOnlyStateBoundary();
+          var b = layer.getBounds && layer.getBounds();
+          if (b && b.isValid()) mapAp.fitBounds(b.pad(0.08), { maxZoom: 14, animate: true });
+          layer.openPopup(e.latlng);
+        });
       });
+    }
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(map);
+    function loadGeoJson(url) {
+      return fetch(url, { cache: "default" })
+        .then(function (res) { if (!res.ok) throw new Error(res.status); return res.json(); })
+        .catch(function (err) { console.warn("Failed:", url, err); return null; });
+    }
 
-      L.control.scale({ imperial: false, metric: true, maxWidth: 200 }).addTo(map);
+    function addGeoJsonLayer(data, layerType, smoothOverride) {
+      if (!data) return null;
+      var baseStyle = STYLES[layerType];
+      var smooth = smoothOverride !== undefined ? smoothOverride : layerType === "mandals" ? 1.2 : 1.5;
+      var gj = L.geoJSON(data, {
+        style: function () { return baseStyle; },
+        smoothFactor: smooth
+      });
+      wireLayerEvents(gj, layerType, baseStyle);
+      gj.addTo(mapAp);
+      return gj;
+    }
 
-      map.setView([15.5, 79.5], 7);
+    function fitToStudyArea() {
+      var b = layers.state ? layers.state.getBounds() : layers.districts ? layers.districts.getBounds() : layers.mandals ? layers.mandals.getBounds() : null;
+      if (b && b.isValid()) mapAp.fitBounds(b.pad(0.06), { maxZoom: 10, animate: false });
+    }
 
-      var layers = {
-        state: null,
-        districts: null,
-        mandals: null
+    function bindToggle(checkboxId, layerKey) {
+      document.getElementById(checkboxId).addEventListener("change", function () {
+        var lyr = layers[layerKey];
+        if (!lyr) return;
+        if (this.checked) mapAp.addLayer(lyr);
+        else mapAp.removeLayer(lyr);
+      });
+    }
+    bindToggle("toggle-state", "state");
+    bindToggle("toggle-districts", "districts");
+    bindToggle("toggle-mandals", "mandals");
+
+    Promise.all([
+      loadGeoJson(GEOJSON_URLS.state),
+      loadGeoJson(GEOJSON_URLS.districts),
+      loadGeoJson(GEOJSON_URLS.mandals)
+    ]).then(function (results) {
+      var messages = [];
+      layers.state = addGeoJsonLayer(results[0], "state");
+      if (!layers.state) messages.push("State outline missing (ap_boundary.geojson).");
+      layers.districts = addGeoJsonLayer(results[1], "districts", 2.8);
+      if (!layers.districts) messages.push("District file missing.");
+      layers.mandals = addGeoJsonLayer(results[2], "mandals", 2.2);
+      if (!layers.mandals) messages.push("Mandal file missing.");
+      if (layers.state || layers.districts || layers.mandals) {
+        fitToStudyArea();
+        setLoadMessage(messages.length ? "Map ready. Note: " + messages.join(" ") : "All layers loaded.");
+      } else {
+        setLoadMessage("No GeoJSON loaded. Add ap_boundary.geojson and geojson_ap.geojson.", true);
+      }
+      if (!layers.state) document.getElementById("toggle-state").checked = false;
+      if (!layers.districts) document.getElementById("toggle-districts").checked = false;
+      if (!layers.mandals) document.getElementById("toggle-mandals").checked = false;
+    });
+  })();
+
+  /* ─── Tirupati dashboard (lazy init) ─── */
+  function initTirupatiDashboard() {
+    var VILLAGE_CENTER = [13.6120, 79.9480];
+    var CROP_COLORS = {
+      Paddy: "#4ade80", Sugarcane: "#fbbf24", Groundnut: "#fb923c", Cotton: "#e5e5e5",
+      Mango: "#f472b6", Vegetables: "#60a5fa", Chilli: "#f87171", Fallow: "#9ca3af"
+    };
+    var CROP_ORDER = ["Paddy", "Sugarcane", "Groundnut", "Cotton", "Mango", "Vegetables", "Chilli", "Fallow"];
+
+    function makeField(id, lat, lng, w, h, crop, farmer, season, yield_val, survey) {
+      var noise = function () { return (Math.random() - 0.5) * 0.0008; };
+      var latOff = w / 2, lngOff = h / 2;
+      var coords = [
+        [lat - latOff + noise(), lng - lngOff + noise()],
+        [lat - latOff + noise(), lng + lngOff + noise()],
+        [lat + latOff + noise(), lng + lngOff + noise()],
+        [lat + latOff + noise(), lng - lngOff + noise()]
+      ];
+      var area = Math.round((w * 111000) * (h * 111000) / 4047);
+      return { id: id, crop: crop, farmer: farmer, season: season, yield_val: yield_val, survey: survey, area: Math.max(area, 8), coords: coords };
+    }
+
+    var seed = 42;
+    function rand() { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; }
+
+    var FARMERS = ["K. Ramamurthy", "V. Subramaniam", "T. Lakshmi Devi", "R. Narayana Reddy", "B. Venkata Rao", "P. Srinivasa", "M. Anjaneyulu", "S. Padmavathi", "C. Govinda Reddy", "D. Ramakrishna", "L. Saraswathi", "N. Hanumantha Rao"];
+    var SEASONS = ["Kharif 2024", "Rabi 2024-25", "Kharif 2024", "Rabi 2024-25"];
+    var CROP_POOL = [].concat(
+      Array(16).fill("Paddy"), Array(5).fill("Sugarcane"), Array(6).fill("Groundnut"), Array(4).fill("Cotton"),
+      Array(3).fill("Mango"), Array(4).fill("Vegetables"), Array(2).fill("Chilli"), Array(2).fill("Fallow")
+    );
+    var shuffled = CROP_POOL.slice();
+    for (var si = shuffled.length - 1; si > 0; si--) {
+      var sj = Math.floor(rand() * (si + 1));
+      var tmp = shuffled[si];
+      shuffled[si] = shuffled[sj];
+      shuffled[sj] = tmp;
+    }
+
+    var FIELDS = [];
+    var cols = 7, rows = 6;
+    var yieldMap = { Paddy: "5.2 T/Ac", Sugarcane: "28 T/Ac", Groundnut: "1.8 T/Ac", Cotton: "2.1 T/Ac", Mango: "3.5 T/Ac", Vegetables: "8.0 T/Ac", Chilli: "1.2 T/Ac", Fallow: "—" };
+    for (var fi = 0; fi < 42; fi++) {
+      var col = fi % cols, row = Math.floor(fi / cols);
+      var cx = VILLAGE_CENTER[0] + (col - cols / 2) * 0.0045 + (rand() - 0.5) * 0.001;
+      var cy = VILLAGE_CENTER[1] + (row - rows / 2) * 0.004 + (rand() - 0.5) * 0.001;
+      var w = 0.002 + rand() * 0.0025;
+      var h = 0.0018 + rand() * 0.002;
+      var crop = shuffled[fi];
+      var farmer = FARMERS[Math.floor(rand() * FARMERS.length)];
+      var season = crop === "Mango" ? "Perennial" : SEASONS[Math.floor(rand() * SEASONS.length)];
+      FIELDS.push(makeField(fi + 1, cx, cy, w, h, crop, farmer, season, yieldMap[crop], "SY/2024/" + String(fi + 1).padStart(3, "0")));
+    }
+
+    var cropArea = {};
+    for (var fj = 0; fj < FIELDS.length; fj++) {
+      var f = FIELDS[fj];
+      cropArea[f.crop] = (cropArea[f.crop] || 0) + f.area;
+    }
+    var totalArea = 0;
+    Object.keys(cropArea).forEach(function (k) { totalArea += cropArea[k]; });
+    var fallowArea = cropArea.Fallow || 0;
+    var cultivated = totalArea - fallowArea;
+
+    var map = L.map("map-tirupati", { zoomControl: true, attributionControl: true });
+    window.__mapTirupati = map;
+
+    var TPL = {
+      osm: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap", maxZoom: 19 }),
+      satellite: L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { attribution: "© Esri", maxZoom: 19 }),
+      terrain: L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", { attribution: "© OpenTopoMap", maxZoom: 17 })
+    };
+    TPL.osm.addTo(map);
+    var currentTpLayer = "osm";
+
+    function fitMapToAllFields(padding) {
+      var pts = [];
+      FIELDS.forEach(function (f) {
+        f.coords.forEach(function (c) { pts.push([c[0], c[1]]); });
+      });
+      if (pts.length) map.fitBounds(pts, { padding: padding || [30, 30] });
+    }
+
+    var tpBasemapBtns = document.querySelectorAll("#view-tirupati .tp-map-tool[data-tplayer]");
+    tpBasemapBtns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var name = btn.getAttribute("data-tplayer");
+        TPL[currentTpLayer].remove();
+        TPL[name].addTo(map);
+        currentTpLayer = name;
+        tpBasemapBtns.forEach(function (b) {
+          b.classList.toggle("tp-tool-active", b === btn);
+        });
+      });
+    });
+    document.getElementById("btnTpFit").addEventListener("click", function () { fitMapToAllFields([30, 30]); });
+
+    var villageBoundary = [];
+    var npts = 12;
+    for (var vi = 0; vi < npts; vi++) {
+      var angle = (vi / npts) * Math.PI * 2;
+      var r = 0.018 + Math.sin(vi * 2.3) * 0.004 + Math.cos(vi * 1.7) * 0.003;
+      villageBoundary.push([VILLAGE_CENTER[0] + Math.sin(angle) * r, VILLAGE_CENTER[1] + Math.cos(angle) * r * 1.1]);
+    }
+    L.polygon(villageBoundary, { color: "#4ade80", weight: 2.5, dashArray: "8,6", fillColor: "#4ade80", fillOpacity: 0.04 })
+      .addTo(map).bindTooltip("Chinagottigallu Village Boundary", { permanent: false });
+    L.marker(VILLAGE_CENTER, {
+      icon: L.divIcon({
+        className: "",
+        html: "<div style=\"background:#0a1a0f;color:#4ade80;border:1px solid #4ade80;padding:3px 10px;border-radius:4px;font-family:monospace;font-size:10px;font-weight:700\">CHINAGOTTIGALLU</div>",
+        iconAnchor: [70, 10]
+      })
+    }).addTo(map);
+
+    var allPolygons = [];
+    var activeFilter = "all";
+    var searchMatchIds = null;
+
+    function setSearchMessage(text, kind) {
+      var el = document.getElementById("tpSearchMsg");
+      el.textContent = text || "";
+      el.classList.remove("tp-search-err", "tp-search-ok");
+      if (kind === "err") el.classList.add("tp-search-err");
+      else if (kind === "ok") el.classList.add("tp-search-ok");
+    }
+
+    function fieldPolygonStyle(f, visible, searchMatch) {
+      var col = CROP_COLORS[f.crop];
+      return {
+        color: searchMatch ? "#fbbf24" : col,
+        weight: searchMatch ? 3 : (visible ? 1.5 : 0.3),
+        fillColor: col,
+        fillOpacity: visible ? (searchMatch ? 0.75 : 0.55) : 0.08,
+        opacity: visible ? 1 : 0.2
       };
+    }
 
-      var loadStatusEl = document.getElementById("load-status");
+    function syncPolygonStyles() {
+      allPolygons.forEach(function (entry) {
+        var f = entry.field;
+        var visible = activeFilter === "all" || f.crop === activeFilter;
+        var match = !!(searchMatchIds && searchMatchIds.indexOf(f.id) >= 0);
+        entry.layer.setStyle(fieldPolygonStyle(f, visible, match));
+      });
+    }
 
-      function setLoadMessage(text, isError) {
-        loadStatusEl.textContent = text;
-        loadStatusEl.className = "status" + (isError ? " error" : "");
+    function removeTpPlaceMarker() {
+      if (window.__tpSearchMarker) {
+        map.removeLayer(window.__tpSearchMarker);
+        window.__tpSearchMarker = null;
       }
+    }
 
-      /* -----------------------------------------------------------------------
-         Solo state view: hide district & mandal layers (used on state click).
-         ----------------------------------------------------------------------- */
-      function showOnlyStateBoundary() {
-        if (layers.districts && map.hasLayer(layers.districts)) {
-          map.removeLayer(layers.districts);
-        }
-        if (layers.mandals && map.hasLayer(layers.mandals)) {
-          map.removeLayer(layers.mandals);
-        }
-        document.getElementById("toggle-districts").checked = false;
-        document.getElementById("toggle-mandals").checked = false;
-        if (layers.state && !map.hasLayer(layers.state)) {
-          map.addLayer(layers.state);
-        }
-        document.getElementById("toggle-state").checked = true;
+    function clearSearchHighlight() {
+      searchMatchIds = null;
+      removeTpPlaceMarker();
+      setSearchMessage("");
+      syncPolygonStyles();
+    }
+
+    function getPolygonEntryByFieldId(id) {
+      for (var i = 0; i < allPolygons.length; i++) {
+        if (allPolygons[i].field.id === id) return allPolygons[i];
       }
+      return null;
+    }
 
-      /* -----------------------------------------------------------------------
-         Attach hover (highlight + tooltip) and click (fitBounds + popup)
-         ----------------------------------------------------------------------- */
-      function wireLayerEvents(geoJsonLayer, layerType, baseStyle) {
-        geoJsonLayer.eachLayer(function (layer) {
-          var props = layer.feature && layer.feature.properties;
-          var name = getFeatureName(props);
+    function runFieldSearch() {
+      var raw = (document.getElementById("tpFieldSearch").value || "").trim();
+      if (!raw) {
+        clearSearchHighlight();
+        return;
+      }
+      var q = raw.toLowerCase();
+      var idPart = raw.replace(/^#\s*/, "").trim();
+      var matches = FIELDS.filter(function (f) {
+        if (/^\d+$/.test(idPart)) return f.id === parseInt(idPart, 10);
+        if (f.farmer.toLowerCase().indexOf(q) >= 0) return true;
+        if (f.survey.toLowerCase().indexOf(q) >= 0) return true;
+        return f.crop.toLowerCase().indexOf(q) >= 0;
+      });
+      if (matches.length === 0) {
+        searchMatchIds = null;
+        syncPolygonStyles();
+        geocodePlaceSearch(raw);
+        return;
+      }
+      removeTpPlaceMarker();
+      searchMatchIds = matches.map(function (f) { return f.id; });
+      syncPolygonStyles();
+      var latlngs = [];
+      matches.forEach(function (f) {
+        f.coords.forEach(function (c) { latlngs.push(L.latLng(c[0], c[1])); });
+      });
+      var b = L.latLngBounds(latlngs);
+      if (b.isValid()) {
+        map.fitBounds(b.pad(0.15), { padding: [50, 50], maxZoom: matches.length === 1 ? 17 : 16, animate: true });
+      }
+      if (matches.length === 1) {
+        highlightFieldItem(matches[0].id);
+        var one = getPolygonEntryByFieldId(matches[0].id);
+        if (one) one.layer.openPopup();
+        setSearchMessage("1 field — zoomed and highlighted.", "ok");
+      } else {
+        setSearchMessage(matches.length + " fields match — map zoomed to area.", "ok");
+      }
+    }
 
-          layer.bindTooltip(name, {
-            sticky: true,
-            direction: "auto",
-            opacity: 0.95,
-            className: "ap-tooltip"
-          });
+    /* OpenStreetMap Nominatim: place names (e.g. villages) not present in field rows */
+    function geocodePlaceSearch(raw) {
+      setSearchMessage("Looking up place…", "ok");
+      var params = new URLSearchParams({
+        q: raw + ", Andhra Pradesh, India",
+        format: "json",
+        limit: "6",
+        addressdetails: "1"
+      });
+      var url = "https://nominatim.openstreetmap.org/search?" + params.toString();
+      fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json", "Accept-Language": "en" },
+        mode: "cors"
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          if (!data || !data.length) {
+            setSearchMessage("No fields or places match \"" + raw + "\".", "err");
+            return;
+          }
+          var r0 = data[0];
+          var lat = parseFloat(r0.lat);
+          var lon = parseFloat(r0.lon);
+          if (isNaN(lat) || isNaN(lon)) {
+            setSearchMessage("Place found but coordinates were invalid.", "err");
+            return;
+          }
+          removeTpPlaceMarker();
+          var pin = L.marker([lat, lon], {
+            icon: L.divIcon({
+              className: "",
+              html: "<div style=\"width:14px;height:14px;background:#fbbf24;border:2px solid #0a1a0f;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.4)\"></div>",
+              iconSize: [14, 14],
+              iconAnchor: [7, 7]
+            })
+          }).addTo(map);
+          window.__tpSearchMarker = pin;
+          pin.bindPopup("<div style=\"font:12px DM Sans,sans-serif;max-width:220px\"><strong>Search</strong><br/>" +
+            String(r0.display_name || raw).replace(/</g, "&lt;") + "</div>");
 
-          layer.on("mouseover", function () {
-            layer.setStyle(Object.assign({}, baseStyle, HIGHLIGHT[layerType]));
-            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-              layer.bringToFront();
+          if (r0.boundingbox && r0.boundingbox.length === 4) {
+            var south = parseFloat(r0.boundingbox[0]);
+            var north = parseFloat(r0.boundingbox[1]);
+            var west = parseFloat(r0.boundingbox[2]);
+            var east = parseFloat(r0.boundingbox[3]);
+            if (!isNaN(south) && !isNaN(north) && !isNaN(west) && !isNaN(east)) {
+              map.fitBounds(
+                L.latLngBounds(L.latLng(south, west), L.latLng(north, east)),
+                { padding: [48, 48], maxZoom: 15, animate: true }
+              );
+            } else {
+              map.flyTo([lat, lon], 14, { animate: true });
             }
-          });
-
-          layer.on("mouseout", function () {
-            layer.setStyle(baseStyle);
-          });
-
-          layer.bindPopup(popupContent(layerType, props, name), { maxWidth: 280 });
-
-          layer.on("click", function (e) {
-            L.DomEvent.stopPropagation(e);
-            /* State boundary click: show only the state layer; hide others. */
-            if (layerType === "state") {
-              showOnlyStateBoundary();
-            }
-            var b = layer.getBounds && layer.getBounds();
-            if (b && b.isValid()) {
-              map.fitBounds(b.pad(0.08), { maxZoom: 14, animate: true });
-            }
-            layer.openPopup(e.latlng);
-          });
-        });
-      }
-
-      /* -----------------------------------------------------------------------
-         Fetch GeoJSON asynchronously; return parsed JSON or null on failure
-         ----------------------------------------------------------------------- */
-      function loadGeoJson(url) {
-        return fetch(url, { cache: "default" })
-          .then(function (res) {
-            if (!res.ok) throw new Error(res.status + " " + res.statusText);
-            return res.json();
-          })
-          .catch(function (err) {
-            console.warn("Failed to load GeoJSON:", url, err);
-            return null;
-          });
-      }
-
-      function addGeoJsonLayer(data, layerType, smoothOverride) {
-        if (!data) return null;
-        var baseStyle = STYLES[layerType];
-        var smooth =
-          smoothOverride !== undefined
-            ? smoothOverride
-            : layerType === "mandals"
-              ? 1.2
-              : 1.5;
-        var gj = L.geoJSON(data, {
-          style: function () {
-            return baseStyle;
-          },
-          /* smoothFactor reduces vertices when rendering (helps heavy district outlines). */
-          smoothFactor: smooth
-        });
-        wireLayerEvents(gj, layerType, baseStyle);
-        gj.addTo(map);
-        return gj;
-      }
-
-      /* -----------------------------------------------------------------------
-         Fit map to Andhra Pradesh: prefer state bounds, else union of others
-         ----------------------------------------------------------------------- */
-      function fitToStudyArea() {
-        var b = null;
-        if (layers.state) {
-          b = layers.state.getBounds();
-        } else if (layers.districts) {
-          b = layers.districts.getBounds();
-        } else if (layers.mandals) {
-          b = layers.mandals.getBounds();
-        }
-        if (b && b.isValid()) {
-          map.fitBounds(b.pad(0.06), { maxZoom: 10, animate: false });
-        }
-      }
-
-      /* -----------------------------------------------------------------------
-         Layer toggle UI
-         ----------------------------------------------------------------------- */
-      function bindToggle(checkboxId, layerKey) {
-        var el = document.getElementById(checkboxId);
-        el.addEventListener("change", function () {
-          var lyr = layers[layerKey];
-          if (!lyr) return;
-          if (el.checked) {
-            map.addLayer(lyr);
           } else {
-            map.removeLayer(lyr);
+            map.flyTo([lat, lon], 14, { animate: true });
           }
+
+          pin.openPopup();
+
+          var target = L.latLng(lat, lon);
+          var nearIds = [];
+          FIELDS.forEach(function (f) {
+            var c = f.coords;
+            var mlat = (c[0][0] + c[2][0]) / 2;
+            var mlng = (c[0][1] + c[2][1]) / 2;
+            if (map.distance(L.latLng(mlat, mlng), target) <= 3500) nearIds.push(f.id);
+          });
+          var placeLabel = String(r0.display_name || raw);
+          var shortPlace = placeLabel.length > 72 ? placeLabel.slice(0, 72) + "…" : placeLabel;
+          if (nearIds.length) {
+            searchMatchIds = nearIds;
+            syncPolygonStyles();
+            setSearchMessage("Place: " + shortPlace + " — " + nearIds.length + " field(s) nearby in this dataset.", "ok");
+          } else {
+            searchMatchIds = null;
+            syncPolygonStyles();
+            setSearchMessage("Place: " + shortPlace + ". Crop polygons here are demo data for Chinagottigallu only.", "ok");
+          }
+        })
+        .catch(function () {
+          setSearchMessage(
+            "Could not look up \"" + raw + "\" (network, CORS, or rate limit). Use http://localhost or try field # / farmer / crop.",
+            "err"
+          );
         });
-      }
+    }
 
-      bindToggle("toggle-state", "state");
-      bindToggle("toggle-districts", "districts");
-      bindToggle("toggle-mandals", "mandals");
+    function buildPopup(f) {
+      var col = CROP_COLORS[f.crop];
+      return "<div class=\"field-popup\">" +
+        "<div class=\"popup-crop-badge\" style=\"background:" + col + "22;color:" + col + ";border:1px solid " + col + "\">" + f.crop + "</div>" +
+        "<div class=\"popup-title\">Field #" + f.id + " — " + f.survey + "</div>" +
+        "<div class=\"popup-grid\">" +
+        "<div class=\"popup-row\"><label>Farmer</label><value>" + f.farmer + "</value></div>" +
+        "<div class=\"popup-row\"><label>Area</label><value>" + f.area + " Ac</value></div>" +
+        "<div class=\"popup-row\"><label>Season</label><value>" + f.season + "</value></div>" +
+        "<div class=\"popup-row\"><label>Est. Yield</label><value>" + f.yield_val + "</value></div>" +
+        "</div></div>";
+    }
 
-      /* -----------------------------------------------------------------------
-         Load all three datasets in parallel
-         ----------------------------------------------------------------------- */
-      Promise.all([
-        loadGeoJson(GEOJSON_URLS.state),
-        loadGeoJson(GEOJSON_URLS.districts),
-        loadGeoJson(GEOJSON_URLS.mandals)
-      ]).then(function (results) {
-        var stateData = results[0];
-        var districtData = results[1];
-        var mandalData = results[2];
+    function highlightFieldItem(id) {
+      document.querySelectorAll("#view-tirupati .tp-field-item").forEach(function (el) { el.classList.remove("tp-fi-active"); });
+      var el = document.getElementById("fi-" + id);
+      if (el) { el.classList.add("tp-fi-active"); el.scrollIntoView({ block: "nearest" }); }
+    }
 
-        var messages = [];
-
-        layers.state = addGeoJsonLayer(stateData, "state");
-        if (!layers.state) messages.push("State outline missing (ap_boundary.geojson). Run build_ap_boundary.py if needed.");
-
-        /* geojson_ap.geojson is very vertex-dense; higher smoothFactor keeps pan/zoom usable. */
-        layers.districts = addGeoJsonLayer(districtData, "districts", 2.8);
-        if (!layers.districts) messages.push("District file missing or invalid.");
-
-        /* Many mandal polygons — higher smoothFactor helps Leaflet stay responsive. */
-        layers.mandals = addGeoJsonLayer(mandalData, "mandals", 2.2);
-        if (!layers.mandals) messages.push("Mandal file missing (ap_mandals.geojson). Run build_ap_mandals.py.");
-
-        if (layers.state || layers.districts || layers.mandals) {
-          fitToStudyArea();
-          setLoadMessage(
-            messages.length
-              ? "Map ready. Note: " + messages.join(" ")
-              : "All layers loaded."
-          );
-        } else {
-          setLoadMessage(
-            "No GeoJSON could be loaded. Add ap_boundary.geojson and geojson_ap.geojson next to this HTML file.",
-            true
-          );
-        }
-
-        /* Uncheck toggles for layers that failed to load */
-        if (!layers.state) document.getElementById("toggle-state").checked = false;
-        if (!layers.districts) document.getElementById("toggle-districts").checked = false;
-        if (!layers.mandals) document.getElementById("toggle-mandals").checked = false;
+    function drawPolygons(filter) {
+      allPolygons.forEach(function (p) { map.removeLayer(p.layer); });
+      allPolygons = [];
+      FIELDS.forEach(function (f) {
+        var visible = filter === "all" || f.crop === filter;
+        var col = CROP_COLORS[f.crop];
+        var latlngs = f.coords.map(function (c) { return [c[0], c[1]]; });
+        var poly = L.polygon(latlngs, {
+          color: col,
+          weight: visible ? 1.5 : 0.3,
+          fillColor: col,
+          fillOpacity: visible ? 0.55 : 0.08,
+          opacity: visible ? 1 : 0.2
+        });
+        var entry = { layer: poly, field: f, visible: visible };
+        poly.bindPopup(buildPopup(f), { maxWidth: 280 });
+        poly.on("mouseover", function () {
+          if (visible) this.setStyle({ fillOpacity: 0.8, weight: 2.5 });
+        });
+        poly.on("mouseout", function () {
+          var match = !!(searchMatchIds && searchMatchIds.indexOf(f.id) >= 0);
+          entry.layer.setStyle(fieldPolygonStyle(f, visible, match));
+        });
+        poly.on("click", function (e) {
+          L.DomEvent.stopPropagation(e);
+          highlightFieldItem(f.id);
+        });
+        poly.addTo(map);
+        allPolygons.push(entry);
       });
+      syncPolygonStyles();
+    }
 
-      /*
-       * Performance note for very large GeoJSON:
-       * - Pre-simplify geometries (e.g. Mapshaper: https://mapshaper.org) before serving.
-       * - For production at scale, convert to vector tiles (Tippecanoe / pg_tileserv)
-       *   and use Leaflet.VectorGrid — that keeps payloads small and interaction smooth.
-       */
-    })();
+    function updateStats(filter) {
+      var fields, area, dominant, avgSize, fallow;
+      if (filter === "all") {
+        fields = FIELDS.length;
+        area = cultivated;
+        var domEnt = Object.keys(cropArea).filter(function (c) { return c !== "Fallow"; }).map(function (c) { return [c, cropArea[c]]; });
+        domEnt.sort(function (a, b) { return b[1] - a[1]; });
+        dominant = domEnt[0][0];
+        avgSize = (totalArea / FIELDS.length).toFixed(1);
+        fallow = fallowArea;
+        var pct = cultivated ? ((cropArea[dominant] / cultivated) * 100).toFixed(1) : 0;
+        document.getElementById("statDominantSub").textContent = pct + "% of cultivated area";
+      } else {
+        var filtered = FIELDS.filter(function (f) { return f.crop === filter; });
+        fields = filtered.length;
+        area = filtered.reduce(function (s, f) { return s + f.area; }, 0);
+        dominant = filter;
+        avgSize = fields ? (area / fields).toFixed(1) : 0;
+        fallow = filter === "Fallow" ? area : 0;
+        document.getElementById("statDominantSub").textContent = "filtered";
+      }
+      document.getElementById("totalFields").textContent = fields;
+      document.getElementById("cultivatedArea").textContent = area.toLocaleString();
+      document.getElementById("dominantCrop").textContent = dominant;
+      document.getElementById("avgFieldSize").textContent = avgSize;
+      document.getElementById("fallowArea").textContent = fallow;
+    }
+
+    function updateFieldList(filter) {
+      var list = document.getElementById("fieldList");
+      var filtered = filter === "all" ? FIELDS : FIELDS.filter(function (f) { return f.crop === filter; });
+      document.getElementById("fieldListCount").textContent = filtered.length + " fields";
+      list.innerHTML = filtered.map(function (f) {
+        var col = CROP_COLORS[f.crop];
+        return "<div class=\"tp-field-item\" id=\"fi-" + f.id + "\" style=\"--item-color:" + col + "\" data-field-id=\"" + f.id + "\">" +
+          "<div class=\"tp-field-dot\"></div><div class=\"tp-field-info\">" +
+          "<div class=\"tp-field-name\">Field #" + f.id + "</div>" +
+          "<div class=\"tp-field-meta\">" + f.survey + " · " + f.farmer.split(" ")[0] + "</div></div>" +
+          "<div class=\"tp-field-area\">" + f.area + "Ac</div></div>";
+      }).join("");
+      list.querySelectorAll(".tp-field-item").forEach(function (row) {
+        row.addEventListener("click", function () {
+          var id = parseInt(row.getAttribute("data-field-id"), 10);
+          focusField(id);
+        });
+      });
+    }
+
+    function focusField(id) {
+      highlightFieldItem(id);
+      var e = getPolygonEntryByFieldId(id);
+      if (!e) return;
+      var b = e.layer.getBounds();
+      if (b && b.isValid()) map.fitBounds(b, { padding: [60, 60], maxZoom: 17, animate: true });
+      e.layer.openPopup();
+    }
+
+    function applyFilter(crop) {
+      activeFilter = crop;
+      drawPolygons(crop);
+      updateFieldList(crop);
+      updateStats(crop);
+      document.querySelectorAll("#view-tirupati .tp-filter-btn").forEach(function (btn) {
+        var on = (crop === "all" && btn.classList.contains("tp-filter-all")) || btn.getAttribute("data-crop") === crop;
+        btn.classList.toggle("tp-active", on);
+      });
+      var info = document.getElementById("activeFilterInfo");
+      if (crop !== "all") {
+        var cnt = FIELDS.filter(function (f) { return f.crop === crop; }).length;
+        document.getElementById("activeFilterText").textContent = "Showing " + cnt + " " + crop + " fields";
+        info.classList.add("tp-show");
+      } else {
+        info.classList.remove("tp-show");
+      }
+    }
+
+    document.getElementById("btnClearFilter").addEventListener("click", function () { applyFilter("all"); });
+
+    var grid = document.getElementById("tpFilterGrid");
+    grid.innerHTML = "<button type=\"button\" class=\"tp-filter-btn tp-filter-all tp-active\" data-crop=\"all\" style=\"--btn-color:#4ade80\"><div class=\"tp-filter-dot\"></div>All Crops</button>";
+    grid.querySelector(".tp-filter-all").addEventListener("click", function () { applyFilter("all"); });
+    CROP_ORDER.forEach(function (c) {
+      var cnt = FIELDS.filter(function (f) { return f.crop === c; }).length;
+      var col = CROP_COLORS[c];
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "tp-filter-btn";
+      b.setAttribute("data-crop", c);
+      b.style.setProperty("--btn-color", col);
+      b.innerHTML = "<div class=\"tp-filter-dot\"></div> " + c + " <span class=\"tp-filter-count\">" + cnt + "</span>";
+      b.addEventListener("click", function () { applyFilter(c); });
+      grid.appendChild(b);
+    });
+
+    function renderCropBars() {
+      var sorted = Object.keys(cropArea).map(function (k) { return [k, cropArea[k]]; });
+      sorted.sort(function (a, b) { return b[1] - a[1]; });
+      var maxArea = sorted[0][1];
+      document.getElementById("cropBars").innerHTML = sorted.map(function (ent) {
+        var cr = ent[0], ar = ent[1];
+        var pct = ((ar / maxArea) * 100).toFixed(0);
+        var col = CROP_COLORS[cr];
+        return "<div><div class=\"tp-bar-label\"><strong>" + cr + "</strong><span>" + ar + " Ac · " + ((ar / totalArea) * 100).toFixed(1) + "%</span></div>" +
+          "<div class=\"tp-bar-track\"><div class=\"tp-bar-fill\" style=\"width:" + pct + "%;background:" + col + "\"></div></div></div>";
+      }).join("");
+    }
+
+    function renderLegend() {
+      document.getElementById("mapLegend").innerHTML =
+        CROP_ORDER.map(function (cr) {
+          return "<div class=\"tp-legend-item\"><div class=\"tp-legend-dot\" style=\"background:" + CROP_COLORS[cr] + "\"></div>" + cr + "</div>";
+        }).join("") +
+        "<div class=\"tp-legend-item\" style=\"margin-left:auto;color:#6b9e78;font-size:10px;font-family:monospace\">Village boundary (approx.)</div>";
+    }
+
+    drawPolygons("all");
+    updateFieldList("all");
+    renderCropBars();
+    renderLegend();
+    updateStats("all");
+    fitMapToAllFields([30, 30]);
+
+    setTimeout(function () {
+      document.querySelectorAll("#view-tirupati .tp-bar-fill").forEach(function (el) {
+        var w = el.style.width;
+        el.style.width = "0";
+        setTimeout(function () { el.style.width = w; }, 100);
+      });
+    }, 400);
+
+    document.getElementById("tpSearchBtn").addEventListener("click", runFieldSearch);
+    document.getElementById("tpFieldSearch").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        runFieldSearch();
+      }
+    });
+  }
+})();
   </script>
 </body>
 </html>

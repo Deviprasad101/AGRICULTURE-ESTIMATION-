@@ -1,0 +1,424 @@
+{
+  "source_html": "tirupati_crop_dashboard.html",
+  "location": {
+    "village": "Chinagottigallu",
+    "mandal": "Pellakuru",
+    "district": "Tirupati",
+    "state": "Andhra Pradesh",
+    "center_lat": 13.612,
+    "center_lng": 79.948
+  },
+  "survey_meta": {
+    "survey_year_label": "2024\u201325",
+    "field_count": 42
+  },
+  "stats_all_crops": {
+    "total_fields": 42,
+    "total_area_ac": 1139,
+    "cultivated_area_ac": 1084,
+    "fallow_area_ac": 55,
+    "dominant_crop": "Paddy",
+    "dominant_pct_of_cultivated": 43.6,
+    "avg_field_size_ac": 27.1
+  },
+  "crop_area_acres": {
+    "Mango": 80,
+    "Paddy": 473,
+    "Sugarcane": 138,
+    "Cotton": 93,
+    "Fallow": 55,
+    "Chilli": 50,
+    "Vegetables": 101,
+    "Groundnut": 149
+  },
+  "crop_colors_hex": {
+    "Paddy": "#4ade80",
+    "Sugarcane": "#fbbf24",
+    "Groundnut": "#fb923c",
+    "Cotton": "#e5e5e5",
+    "Mango": "#f472b6",
+    "Vegetables": "#60a5fa",
+    "Chilli": "#f87171",
+    "Fallow": "#9ca3af"
+  },
+  "fields": [
+    {
+      "id": 1,
+      "crop": "Mango",
+      "area_ac": 20,
+      "farmer": "V. Subramaniam",
+      "season": "Perennial",
+      "yield": "3.5 T/Ac",
+      "survey": "SY/2024/001"
+    },
+    {
+      "id": 2,
+      "crop": "Paddy",
+      "area_ac": 37,
+      "farmer": "B. Venkata Rao",
+      "season": "Rabi 2024-25",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/002"
+    },
+    {
+      "id": 3,
+      "crop": "Sugarcane",
+      "area_ac": 34,
+      "farmer": "P. Srinivasa",
+      "season": "Kharif 2024",
+      "yield": "28 T/Ac",
+      "survey": "SY/2024/003"
+    },
+    {
+      "id": 4,
+      "crop": "Sugarcane",
+      "area_ac": 30,
+      "farmer": "P. Srinivasa",
+      "season": "Kharif 2024",
+      "yield": "28 T/Ac",
+      "survey": "SY/2024/004"
+    },
+    {
+      "id": 5,
+      "crop": "Paddy",
+      "area_ac": 23,
+      "farmer": "B. Venkata Rao",
+      "season": "Kharif 2024",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/005"
+    },
+    {
+      "id": 6,
+      "crop": "Cotton",
+      "area_ac": 28,
+      "farmer": "N. Hanumantha Rao",
+      "season": "Kharif 2024",
+      "yield": "2.1 T/Ac",
+      "survey": "SY/2024/006"
+    },
+    {
+      "id": 7,
+      "crop": "Cotton",
+      "area_ac": 16,
+      "farmer": "P. Srinivasa",
+      "season": "Rabi 2024-25",
+      "yield": "2.1 T/Ac",
+      "survey": "SY/2024/007"
+    },
+    {
+      "id": 8,
+      "crop": "Fallow",
+      "area_ac": 42,
+      "farmer": "C. Govinda Reddy",
+      "season": "Kharif 2024",
+      "yield": "\u2014",
+      "survey": "SY/2024/008"
+    },
+    {
+      "id": 9,
+      "crop": "Paddy",
+      "area_ac": 25,
+      "farmer": "M. Anjaneyulu",
+      "season": "Kharif 2024",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/009"
+    },
+    {
+      "id": 10,
+      "crop": "Chilli",
+      "area_ac": 28,
+      "farmer": "R. Narayana Reddy",
+      "season": "Rabi 2024-25",
+      "yield": "1.2 T/Ac",
+      "survey": "SY/2024/010"
+    },
+    {
+      "id": 11,
+      "crop": "Paddy",
+      "area_ac": 37,
+      "farmer": "R. Narayana Reddy",
+      "season": "Kharif 2024",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/011"
+    },
+    {
+      "id": 12,
+      "crop": "Vegetables",
+      "area_ac": 29,
+      "farmer": "C. Govinda Reddy",
+      "season": "Kharif 2024",
+      "yield": "8.0 T/Ac",
+      "survey": "SY/2024/012"
+    },
+    {
+      "id": 13,
+      "crop": "Vegetables",
+      "area_ac": 15,
+      "farmer": "D. Ramakrishna",
+      "season": "Rabi 2024-25",
+      "yield": "8.0 T/Ac",
+      "survey": "SY/2024/013"
+    },
+    {
+      "id": 14,
+      "crop": "Paddy",
+      "area_ac": 42,
+      "farmer": "D. Ramakrishna",
+      "season": "Rabi 2024-25",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/014"
+    },
+    {
+      "id": 15,
+      "crop": "Groundnut",
+      "area_ac": 23,
+      "farmer": "N. Hanumantha Rao",
+      "season": "Rabi 2024-25",
+      "yield": "1.8 T/Ac",
+      "survey": "SY/2024/015"
+    },
+    {
+      "id": 16,
+      "crop": "Groundnut",
+      "area_ac": 22,
+      "farmer": "L. Saraswathi",
+      "season": "Kharif 2024",
+      "yield": "1.8 T/Ac",
+      "survey": "SY/2024/016"
+    },
+    {
+      "id": 17,
+      "crop": "Paddy",
+      "area_ac": 27,
+      "farmer": "R. Narayana Reddy",
+      "season": "Rabi 2024-25",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/017"
+    },
+    {
+      "id": 18,
+      "crop": "Mango",
+      "area_ac": 25,
+      "farmer": "K. Ramamurthy",
+      "season": "Perennial",
+      "yield": "3.5 T/Ac",
+      "survey": "SY/2024/018"
+    },
+    {
+      "id": 19,
+      "crop": "Vegetables",
+      "area_ac": 34,
+      "farmer": "T. Lakshmi Devi",
+      "season": "Rabi 2024-25",
+      "yield": "8.0 T/Ac",
+      "survey": "SY/2024/019"
+    },
+    {
+      "id": 20,
+      "crop": "Paddy",
+      "area_ac": 23,
+      "farmer": "T. Lakshmi Devi",
+      "season": "Kharif 2024",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/020"
+    },
+    {
+      "id": 21,
+      "crop": "Groundnut",
+      "area_ac": 22,
+      "farmer": "P. Srinivasa",
+      "season": "Rabi 2024-25",
+      "yield": "1.8 T/Ac",
+      "survey": "SY/2024/021"
+    },
+    {
+      "id": 22,
+      "crop": "Paddy",
+      "area_ac": 31,
+      "farmer": "B. Venkata Rao",
+      "season": "Kharif 2024",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/022"
+    },
+    {
+      "id": 23,
+      "crop": "Sugarcane",
+      "area_ac": 25,
+      "farmer": "V. Subramaniam",
+      "season": "Kharif 2024",
+      "yield": "28 T/Ac",
+      "survey": "SY/2024/023"
+    },
+    {
+      "id": 24,
+      "crop": "Groundnut",
+      "area_ac": 22,
+      "farmer": "N. Hanumantha Rao",
+      "season": "Rabi 2024-25",
+      "yield": "1.8 T/Ac",
+      "survey": "SY/2024/024"
+    },
+    {
+      "id": 25,
+      "crop": "Chilli",
+      "area_ac": 22,
+      "farmer": "M. Anjaneyulu",
+      "season": "Rabi 2024-25",
+      "yield": "1.2 T/Ac",
+      "survey": "SY/2024/025"
+    },
+    {
+      "id": 26,
+      "crop": "Fallow",
+      "area_ac": 13,
+      "farmer": "D. Ramakrishna",
+      "season": "Kharif 2024",
+      "yield": "\u2014",
+      "survey": "SY/2024/026"
+    },
+    {
+      "id": 27,
+      "crop": "Paddy",
+      "area_ac": 25,
+      "farmer": "K. Ramamurthy",
+      "season": "Rabi 2024-25",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/027"
+    },
+    {
+      "id": 28,
+      "crop": "Vegetables",
+      "area_ac": 23,
+      "farmer": "S. Padmavathi",
+      "season": "Rabi 2024-25",
+      "yield": "8.0 T/Ac",
+      "survey": "SY/2024/028"
+    },
+    {
+      "id": 29,
+      "crop": "Groundnut",
+      "area_ac": 29,
+      "farmer": "P. Srinivasa",
+      "season": "Kharif 2024",
+      "yield": "1.8 T/Ac",
+      "survey": "SY/2024/029"
+    },
+    {
+      "id": 30,
+      "crop": "Sugarcane",
+      "area_ac": 25,
+      "farmer": "B. Venkata Rao",
+      "season": "Kharif 2024",
+      "yield": "28 T/Ac",
+      "survey": "SY/2024/030"
+    },
+    {
+      "id": 31,
+      "crop": "Paddy",
+      "area_ac": 23,
+      "farmer": "M. Anjaneyulu",
+      "season": "Rabi 2024-25",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/031"
+    },
+    {
+      "id": 32,
+      "crop": "Cotton",
+      "area_ac": 22,
+      "farmer": "P. Srinivasa",
+      "season": "Rabi 2024-25",
+      "yield": "2.1 T/Ac",
+      "survey": "SY/2024/032"
+    },
+    {
+      "id": 33,
+      "crop": "Mango",
+      "area_ac": 35,
+      "farmer": "M. Anjaneyulu",
+      "season": "Perennial",
+      "yield": "3.5 T/Ac",
+      "survey": "SY/2024/033"
+    },
+    {
+      "id": 34,
+      "crop": "Cotton",
+      "area_ac": 27,
+      "farmer": "M. Anjaneyulu",
+      "season": "Kharif 2024",
+      "yield": "2.1 T/Ac",
+      "survey": "SY/2024/034"
+    },
+    {
+      "id": 35,
+      "crop": "Paddy",
+      "area_ac": 28,
+      "farmer": "R. Narayana Reddy",
+      "season": "Kharif 2024",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/035"
+    },
+    {
+      "id": 36,
+      "crop": "Sugarcane",
+      "area_ac": 24,
+      "farmer": "C. Govinda Reddy",
+      "season": "Rabi 2024-25",
+      "yield": "28 T/Ac",
+      "survey": "SY/2024/036"
+    },
+    {
+      "id": 37,
+      "crop": "Paddy",
+      "area_ac": 18,
+      "farmer": "T. Lakshmi Devi",
+      "season": "Rabi 2024-25",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/037"
+    },
+    {
+      "id": 38,
+      "crop": "Paddy",
+      "area_ac": 40,
+      "farmer": "N. Hanumantha Rao",
+      "season": "Kharif 2024",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/038"
+    },
+    {
+      "id": 39,
+      "crop": "Paddy",
+      "area_ac": 24,
+      "farmer": "S. Padmavathi",
+      "season": "Rabi 2024-25",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/039"
+    },
+    {
+      "id": 40,
+      "crop": "Groundnut",
+      "area_ac": 31,
+      "farmer": "N. Hanumantha Rao",
+      "season": "Kharif 2024",
+      "yield": "1.8 T/Ac",
+      "survey": "SY/2024/040"
+    },
+    {
+      "id": 41,
+      "crop": "Paddy",
+      "area_ac": 38,
+      "farmer": "N. Hanumantha Rao",
+      "season": "Kharif 2024",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/041"
+    },
+    {
+      "id": 42,
+      "crop": "Paddy",
+      "area_ac": 32,
+      "farmer": "R. Narayana Reddy",
+      "season": "Kharif 2024",
+      "yield": "5.2 T/Ac",
+      "survey": "SY/2024/042"
+    }
+  ]
+}
