@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Andhra Pradesh — Administrative Boundaries Map</title>
+
+  <!-- Leaflet CSS (CDN) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    /* -------------------------------------------------------------------------
+       Layout: fullscreen map with a floating control panel
+       ------------------------------------------------------------------------- */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+      color: #1a1a1a;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    /* Top-right panel: layer toggles + legend */
+    .panel {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      max-width: min(320px, calc(100vw - 24px));
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 10px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .panel h1 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .panel section {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e8e8e8;
+    }
+
+    .panel section:first-of-type {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+
+    .panel h2 {
+      margin: 0 0 8px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #666;
+      font-weight: 600;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-row input {
+      width: 16px;
+      height: 16px;
+      accent-color: #2563eb;
+    }
+
+    /* Legend swatches */
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .swatch {
+      width: 28px;
+      height: 4px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .swatch.state {
+      background: #dc2626;
+      height: 5px;
+    }
+
+    .swatch.district {
+      background: #2563eb;
+    }
+
+    .swatch.mandal {
+      background: #9ca3af;
+      height: 3px;
+    }
+
+    .status {
+      font-size: 12px;
+      color: #555;
+      margin-top: 8px;
+    }
+
+    .status.error {
+      color: #b91c1c;
+    }
+
+    /* Leaflet popup: readable detail list */
+    .popup-detail {
+      max-height: 220px;
+      overflow: auto;
+      font-size: 12px;
+    }
+
+    .popup-detail dt {
+      font-weight: 600;
+      margin-top: 6px;
+      color: #444;
+    }
+
+    .popup-detail dd {
+      margin: 0 0 0 0;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <!--
+    Local tip: opening this file as file:// may block fetch() for .geojson (browser security).
+    Serve the folder over HTTP, e.g. PowerShell:  python -m http.server 8080
+    Then open http://localhost:8080/index.html
+    District layer loads geojson_ap.geojson from the same folder (large file — use a local server).
+  -->
+  <div id="map" role="application" aria-label="Interactive map of Andhra Pradesh"></div>
+
+  <aside class="panel" aria-label="Map controls">
+    <h1>Andhra Pradesh boundaries</h1>
+
+    <section aria-labelledby="layers-heading">
+      <h2 id="layers-heading">Layers</h2>
+      <label class="toggle-row">
+        <input type="checkbox" id="toggle-state" checked />
+        <span>State boundary</span>
+      </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="toggle-districts" checked />
+        <span>District boundaries</span>
+      </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="toggle-mandals" checked />
+        <span>Mandal boundaries</span>
+      </label>
+    </section>
+
+    <section aria-labelledby="legend-heading">
+      <h2 id="legend-heading">Legend</h2>
+      <div class="legend-item">
+        <span class="swatch state" aria-hidden="true"></span>
+        <span>State — thick red outline</span>
+      </div>
+      <div class="legend-item">
+        <span class="swatch district" aria-hidden="true"></span>
+        <span>District — medium blue outline</span>
+      </div>
+      <div class="legend-item">
+        <span class="swatch mandal" aria-hidden="true"></span>
+        <span>Mandal — thin gray outline</span>
+      </div>
+      <p class="status" style="margin-top:8px;color:#666;">Fills are transparent (no obscuring the basemap).</p>
+    </section>
+
+    <p id="load-status" class="status" aria-live="polite">Loading layers…</p>
+  </aside>
+
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* -----------------------------------------------------------------------
+         Configuration: GeoJSON URLs and visual styles
+         District boundaries: geojson_ap.geojson (primary AP dataset).
+         Optional: ap_state.geojson, ap_mandals.geojson if you add them later.
+         ----------------------------------------------------------------------- */
+      var GEOJSON_URLS = {
+        state: "ap_state.geojson",
+        districts: "geojson_ap.geojson",
+        mandals: "ap_mandals.geojson"
+      };
+
+      var STYLES = {
+        state: {
+          color: "#dc2626",
+          weight: 4,
+          opacity: 1,
+          fill: true,
+          fillColor: "#000000",
+          fillOpacity: 0
+        },
+        districts: {
+          color: "#2563eb",
+          weight: 2,
+          opacity: 0.95,
+          fill: true,
+          fillColor: "#000000",
+          fillOpacity: 0
+        },
+        mandals: {
+          color: "#9ca3af",
+          weight: 1,
+          opacity: 0.9,
+          fill: true,
+          fillColor: "#000000",
+          fillOpacity: 0
+        }
+      };
+
+      var HIGHLIGHT = {
+        state: { weight: 6, color: "#ef4444", fillOpacity: 0.08 },
+        districts: { weight: 3, color: "#3b82f6", fillOpacity: 0.06 },
+        mandals: { weight: 2, color: "#6b7280", fillOpacity: 0.05 }
+      };
+
+      /* -----------------------------------------------------------------------
+         Resolve a display name from common GeoJSON property keys
+         (Indian admin shapefiles often use NAME_1, DISTRICT, etc.)
+         ----------------------------------------------------------------------- */
+      function getFeatureName(properties) {
+        if (!properties || typeof properties !== "object") return "Unknown";
+        /* Prefer smallest admin unit first (district / mandal before state st_nm). */
+        var keys = [
+          "name", "NAME", "Name",
+          "MANDAL", "mandal", "MNAME", "mname", "SUB_DIST", "SUBDIST",
+          "DISTRICT", "DISTRICT_N", "district", "dtname", "DTNAME",
+          "NAME_1", "NAME_2", "NAME_3",
+          "STATE", "ST_NM", "st_nm"
+        ];
+        for (var i = 0; i < keys.length; i++) {
+          var v = properties[keys[i]];
+          if (v !== undefined && v !== null && String(v).trim() !== "") {
+            return String(v).trim();
+          }
+        }
+        var first = Object.keys(properties)[0];
+        if (first) return String(properties[first]);
+        return "Feature";
+      }
+
+      /* -----------------------------------------------------------------------
+         Build HTML for popup: feature name + definition list of properties
+         ----------------------------------------------------------------------- */
+      function popupContent(layerType, properties, displayName) {
+        var dl = document.createElement("dl");
+        dl.className = "popup-detail";
+        var dtTitle = document.createElement("dt");
+        dtTitle.textContent = "Name";
+        var ddTitle = document.createElement("dd");
+        ddTitle.textContent = displayName;
+        dl.appendChild(dtTitle);
+        dl.appendChild(ddTitle);
+        var dtType = document.createElement("dt");
+        dtType.textContent = "Layer";
+        var ddType = document.createElement("dd");
+        ddType.textContent =
+          layerType === "state"
+            ? "State boundary"
+            : layerType === "districts"
+              ? "District boundary"
+              : "Mandal boundary";
+        dl.appendChild(dtType);
+        dl.appendChild(ddType);
+        if (properties && typeof properties === "object") {
+          Object.keys(properties).forEach(function (key) {
+            var dt = document.createElement("dt");
+            dt.textContent = key;
+            var dd = document.createElement("dd");
+            dd.textContent = String(properties[key]);
+            dl.appendChild(dt);
+            dl.appendChild(dd);
+          });
+        }
+        return dl;
+      }
+
+      /* -----------------------------------------------------------------------
+         Map init: OSM basemap, scale bar, canvas-friendly rendering for many vectors
+         preferCanvas improves performance when many polygons are on screen.
+         ----------------------------------------------------------------------- */
+      var map = L.map("map", {
+        preferCanvas: true,
+        zoomControl: true,
+        minZoom: 5,
+        maxZoom: 18
+      });
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      L.control.scale({ imperial: false, metric: true, maxWidth: 200 }).addTo(map);
+
+      map.setView([15.5, 79.5], 7);
+
+      var layers = {
+        state: null,
+        districts: null,
+        mandals: null
+      };
+
+      var loadStatusEl = document.getElementById("load-status");
+
+      function setLoadMessage(text, isError) {
+        loadStatusEl.textContent = text;
+        loadStatusEl.className = "status" + (isError ? " error" : "");
+      }
+
+      /* -----------------------------------------------------------------------
+         Attach hover (highlight + tooltip) and click (fitBounds + popup)
+         ----------------------------------------------------------------------- */
+      function wireLayerEvents(geoJsonLayer, layerType, baseStyle) {
+        geoJsonLayer.eachLayer(function (layer) {
+          var props = layer.feature && layer.feature.properties;
+          var name = getFeatureName(props);
+
+          layer.bindTooltip(name, {
+            sticky: true,
+            direction: "auto",
+            opacity: 0.95,
+            className: "ap-tooltip"
+          });
+
+          layer.on("mouseover", function () {
+            layer.setStyle(Object.assign({}, baseStyle, HIGHLIGHT[layerType]));
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+              layer.bringToFront();
+            }
+          });
+
+          layer.on("mouseout", function () {
+            layer.setStyle(baseStyle);
+          });
+
+          layer.bindPopup(popupContent(layerType, props, name), { maxWidth: 280 });
+
+          layer.on("click", function (e) {
+            L.DomEvent.stopPropagation(e);
+            var b = layer.getBounds && layer.getBounds();
+            if (b && b.isValid()) {
+              map.fitBounds(b.pad(0.08), { maxZoom: 14, animate: true });
+            }
+            layer.openPopup(e.latlng);
+          });
+        });
+      }
+
+      /* -----------------------------------------------------------------------
+         Fetch GeoJSON asynchronously; return parsed JSON or null on failure
+         ----------------------------------------------------------------------- */
+      function loadGeoJson(url) {
+        return fetch(url, { cache: "default" })
+          .then(function (res) {
+            if (!res.ok) throw new Error(res.status + " " + res.statusText);
+            return res.json();
+          })
+          .catch(function (err) {
+            console.warn("Failed to load GeoJSON:", url, err);
+            return null;
+          });
+      }
+
+      function addGeoJsonLayer(data, layerType, smoothOverride) {
+        if (!data) return null;
+        var baseStyle = STYLES[layerType];
+        var smooth =
+          smoothOverride !== undefined
+            ? smoothOverride
+            : layerType === "mandals"
+              ? 1.2
+              : 1.5;
+        var gj = L.geoJSON(data, {
+          style: function () {
+            return baseStyle;
+          },
+          /* smoothFactor reduces vertices when rendering (helps heavy district outlines). */
+          smoothFactor: smooth
+        });
+        wireLayerEvents(gj, layerType, baseStyle);
+        gj.addTo(map);
+        return gj;
+      }
+
+      /* -----------------------------------------------------------------------
+         Fit map to Andhra Pradesh: prefer state bounds, else union of others
+         ----------------------------------------------------------------------- */
+      function fitToStudyArea() {
+        var b = null;
+        if (layers.state) {
+          b = layers.state.getBounds();
+        } else if (layers.districts) {
+          b = layers.districts.getBounds();
+        } else if (layers.mandals) {
+          b = layers.mandals.getBounds();
+        }
+        if (b && b.isValid()) {
+          map.fitBounds(b.pad(0.06), { maxZoom: 10, animate: false });
+        }
+      }
+
+      /* -----------------------------------------------------------------------
+         Layer toggle UI
+         ----------------------------------------------------------------------- */
+      function bindToggle(checkboxId, layerKey) {
+        var el = document.getElementById(checkboxId);
+        el.addEventListener("change", function () {
+          var lyr = layers[layerKey];
+          if (!lyr) return;
+          if (el.checked) {
+            map.addLayer(lyr);
+          } else {
+            map.removeLayer(lyr);
+          }
+        });
+      }
+
+      bindToggle("toggle-state", "state");
+      bindToggle("toggle-districts", "districts");
+      bindToggle("toggle-mandals", "mandals");
+
+      /* -----------------------------------------------------------------------
+         Load all three datasets in parallel
+         ----------------------------------------------------------------------- */
+      Promise.all([
+        loadGeoJson(GEOJSON_URLS.state),
+        loadGeoJson(GEOJSON_URLS.districts),
+        loadGeoJson(GEOJSON_URLS.mandals)
+      ]).then(function (results) {
+        var stateData = results[0];
+        var districtData = results[1];
+        var mandalData = results[2];
+
+        var messages = [];
+
+        layers.state = addGeoJsonLayer(stateData, "state");
+        if (!layers.state) messages.push("State file missing or invalid.");
+
+        /* geojson_ap.geojson is very vertex-dense; higher smoothFactor keeps pan/zoom usable. */
+        layers.districts = addGeoJsonLayer(districtData, "districts", 2.8);
+        if (!layers.districts) messages.push("District file missing or invalid.");
+
+        layers.mandals = addGeoJsonLayer(mandalData, "mandals");
+        if (!layers.mandals) messages.push("Mandal file missing or invalid.");
+
+        if (layers.state || layers.districts || layers.mandals) {
+          fitToStudyArea();
+          setLoadMessage(
+            messages.length
+              ? "Map ready. Note: " + messages.join(" ")
+              : "All layers loaded."
+          );
+        } else {
+          setLoadMessage(
+            "No GeoJSON could be loaded. Add geojson_ap.geojson (districts) next to this HTML file.",
+            true
+          );
+        }
+
+        /* Uncheck toggles for layers that failed to load */
+        if (!layers.state) document.getElementById("toggle-state").checked = false;
+        if (!layers.districts) document.getElementById("toggle-districts").checked = false;
+        if (!layers.mandals) document.getElementById("toggle-mandals").checked = false;
+      });
+
+      /*
+       * Performance note for very large GeoJSON:
+       * - Pre-simplify geometries (e.g. Mapshaper: https://mapshaper.org) before serving.
+       * - For production at scale, convert to vector tiles (Tippecanoe / pg_tileserv)
+       *   and use Leaflet.VectorGrid — that keeps payloads small and interaction smooth.
+       */
+    })();
+  </script>
+</body>
+</html>
