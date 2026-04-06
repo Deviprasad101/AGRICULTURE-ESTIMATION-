@@ -81,6 +81,43 @@
     #view-ap .status { font-size: 12px; color: #555; margin-top: 8px; }
     #view-ap .status.error { color: #b91c1c; }
     #view-ap .panel-hint { margin: 10px 0 0; font-size: 11px; color: #666; line-height: 1.4; }
+    #view-ap .ap-tool-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+    #view-ap .ap-tool-btn {
+      flex: 1;
+      min-width: 0;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+    }
+    #view-ap .ap-tool-btn:hover { border-color: #2563eb; color: #1d4ed8; }
+    #view-ap .ap-tool-btn.ap-tool-active {
+      border-color: #2563eb;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    #view-ap .ap-opacity-row { margin: 10px 0 4px; }
+    #view-ap .ap-opacity-row label { display: block; font-size: 11px; color: #555; margin-bottom: 4px; }
+    #view-ap .ap-opacity-row input[type="range"] { width: 100%; accent-color: #2563eb; }
+    #view-ap .ap-crop-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+      font-size: 11px;
+    }
+    #view-ap .ap-crop-leg-item { display: flex; align-items: center; gap: 8px; }
+    #view-ap .ap-crop-swatch { width: 18px; height: 12px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.2); }
+    #view-ap .ap-mandal-popup h3 { margin: 0 0 8px; font-size: 14px; color: #111; }
+    #view-ap .ap-mandal-popup p { margin: 6px 0; font-size: 12px; line-height: 1.4; color: #333; }
+    #view-ap .ap-mandal-crop-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+    #view-ap .ap-mandal-crop-table td { padding: 4px 6px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    #view-ap .ap-mandal-crop-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #view-ap .ap-mandal-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.2); vertical-align: middle; }
     #view-ap .popup-detail { max-height: 220px; overflow: auto; font-size: 12px; }
     #view-ap .popup-detail dt { font-weight: 600; margin-top: 6px; color: #444; }
     #view-ap .popup-detail dd { margin: 0; word-break: break-word; }
@@ -457,6 +494,25 @@
         <p class="panel-hint">Serve over HTTP for GeoJSON. Click state outline to solo state layer; use checkboxes to restore districts/mandals.</p>
       </section>
       <section>
+        <h2>Basemap</h2>
+        <p class="panel-hint" style="margin-top:0">Esri World Imagery helps match fields on the ground; primary-crop fills use district boundaries from your GeoJSON.</p>
+        <div class="ap-tool-row">
+          <button type="button" class="ap-tool-btn ap-tool-active" id="apBasemapOsm" aria-pressed="true">Street (OSM)</button>
+          <button type="button" class="ap-tool-btn" id="apBasemapEsri" aria-pressed="false">Satellite (Esri)</button>
+        </div>
+      </section>
+      <section>
+        <h2>Primary crops (AP demo)</h2>
+        <label class="toggle-row"><input type="checkbox" id="toggle-ap-crops" checked /><span>Show primary crop by district</span></label>
+        <p class="panel-hint" style="margin-top:6px">Synthetic but <strong>fixed</strong> demo: one primary crop colour per district. <strong>Mandals:</strong> turn on mandal boundaries and click a mandal — popup lists all crops grown (demo mix), each area (ha), total ha, and a composite yield estimate; map fill uses the <strong>dominant</strong> crop colour. Not official survey data.</p>
+        <div class="ap-opacity-row">
+          <label for="ap-crop-opacity">Crop fill opacity</label>
+          <input type="range" id="ap-crop-opacity" min="20" max="90" value="52" />
+        </div>
+        <p style="margin:12px 0 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#666">Crop colours</p>
+        <div class="ap-crop-legend" id="apCropLegend"></div>
+      </section>
+      <section>
         <h2>Legend</h2>
         <div class="legend-item"><span class="swatch state" aria-hidden="true"></span><span>State — red</span></div>
         <div class="legend-item"><span class="swatch district" aria-hidden="true"></span><span>District — blue</span></div>
@@ -648,6 +704,7 @@
       dl.appendChild(ddType);
       if (properties && typeof properties === "object") {
         Object.keys(properties).forEach(function (key) {
+          if (key.indexOf("_demo") === 0) return;
           var dt = document.createElement("dt");
           dt.textContent = key;
           var dd = document.createElement("dd");
@@ -655,6 +712,20 @@
           dl.appendChild(dt);
           dl.appendChild(dd);
         });
+        if (properties._demo_primary_crop) {
+          var dtC = document.createElement("dt");
+          dtC.textContent = "Primary crop (demo)";
+          var ddC = document.createElement("dd");
+          ddC.textContent = String(properties._demo_primary_crop);
+          dl.appendChild(dtC);
+          dl.appendChild(ddC);
+          var dtA = document.createElement("dt");
+          dtA.textContent = "Area under crop (demo, ha)";
+          var ddA = document.createElement("dd");
+          ddA.textContent = Number(properties._demo_area_ha).toLocaleString();
+          dl.appendChild(dtA);
+          dl.appendChild(ddA);
+        }
       }
       return dl;
     }
@@ -662,14 +733,230 @@
     var mapAp = L.map("map-ap", { preferCanvas: true, zoomControl: true, minZoom: 5, maxZoom: 18 });
     window.__mapAp = mapAp;
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    var apCropPane = mapAp.createPane("apCropFill");
+    apCropPane.style.zIndex = 340;
+    apCropPane.style.pointerEvents = "none";
+    var apMandalCropPane = mapAp.createPane("apMandalCropFill");
+    apMandalCropPane.style.zIndex = 345;
+    apMandalCropPane.style.pointerEvents = "none";
+
+    var AP_PRIMARY_CROPS = ["Rice", "Maize", "Sugarcane", "Cotton", "Groundnut", "Chilli"];
+    var AP_CROP_COLORS = {
+      Rice: "#16a34a",
+      Maize: "#eab308",
+      Sugarcane: "#a855f7",
+      Cotton: "#64748b",
+      Groundnut: "#ea580c",
+      Chilli: "#dc2626"
+    };
+    var AP_CROP_WEIGHTS = [["Rice", 28], ["Maize", 18], ["Sugarcane", 15], ["Cotton", 15], ["Groundnut", 14], ["Chilli", 10]];
+    var apCropFillOpacity = 0.52;
+
+    (function fillApCropLegend() {
+      var leg = document.getElementById("apCropLegend");
+      if (!leg) return;
+      leg.innerHTML = AP_PRIMARY_CROPS.map(function (c) {
+        return "<div class=\"ap-crop-leg-item\"><span class=\"ap-crop-swatch\" style=\"background:" + AP_CROP_COLORS[c] + "\"></span><span>" + c + "</span></div>";
+      }).join("");
+    })();
+
+    function apHashSeed(str) {
+      var h = 2166136261 >>> 0;
+      for (var i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619) >>> 0;
+      }
+      return h;
+    }
+
+    function apSeededUnit(seed) {
+      var x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    }
+
+    function apPickPrimaryCrop(districtKey) {
+      var s = apHashSeed("AP_CROP2025|" + districtKey);
+      var r = apSeededUnit(s) * 100;
+      var cum = 0;
+      for (var i = 0; i < AP_CROP_WEIGHTS.length; i++) {
+        cum += AP_CROP_WEIGHTS[i][1];
+        if (r < cum) return AP_CROP_WEIGHTS[i][0];
+      }
+      return "Rice";
+    }
+
+    function apPickAreaHa(seed) {
+      var lo = 8500;
+      var hi = 118000;
+      var u = apSeededUnit(seed + 7919);
+      return Math.round((lo + u * (hi - lo)) / 100) * 100;
+    }
+
+    function enrichApDistrictCrops(geojson) {
+      if (!geojson || !geojson.features) return;
+      geojson.features.forEach(function (feat) {
+        var p = feat.properties || (feat.properties = {});
+        var key = getFeatureName(p);
+        var s = apHashSeed(key + "|crop");
+        p._demo_primary_crop = apPickPrimaryCrop(key);
+        p._demo_area_ha = apPickAreaHa(s);
+      });
+    }
+
+    function enrichApMandalCrops(geojson) {
+      if (!geojson || !geojson.features) return;
+      geojson.features.forEach(function (feat) {
+        var p = feat.properties || (feat.properties = {});
+        var key = getFeatureName(p);
+        var s0 = apHashSeed("MANDAL_MIX_v2|" + key);
+        var nCrops = 3 + Math.floor(apSeededUnit(s0 + 11) * 4);
+        var order = AP_PRIMARY_CROPS.slice().sort(function (a, b) {
+          return apSeededUnit(s0 + apHashSeed(a) % 997) - apSeededUnit(s0 + apHashSeed(b) % 997);
+        });
+        var chosen = order.slice(0, nCrops);
+        var weights = chosen.map(function (_, i) { return 0.12 + apSeededUnit(s0 + 50 + i * 19); });
+        var wsum = weights.reduce(function (a, b) { return a + b; }, 0);
+        var totalHa = Math.round((900 + apSeededUnit(s0 + 888) * 48000) / 50) * 50;
+        var breakdown = [];
+        var rem = totalHa;
+        for (var i = 0; i < chosen.length; i++) {
+          var share = weights[i] / wsum;
+          var ha = i === chosen.length - 1 ? rem : Math.max(40, Math.round(totalHa * share / 10) * 10);
+          if (ha > rem) ha = rem;
+          breakdown.push({ crop: chosen[i], ha: ha });
+          rem -= ha;
+        }
+        if (rem !== 0 && breakdown.length) breakdown[breakdown.length - 1].ha += rem;
+        var sum = breakdown.reduce(function (a, b) { return a + b.ha; }, 0);
+        breakdown.forEach(function (row) {
+          row.pct = sum ? ((row.ha / sum) * 100).toFixed(1) : "0";
+        });
+        var dominantRow = breakdown.reduce(function (best, row) {
+          return !best || row.ha > best.ha ? row : best;
+        }, null);
+        p._demo_mandal_breakdown = breakdown;
+        p._demo_mandal_total_ha = sum;
+        p._demo_dominant_crop = dominantRow ? dominantRow.crop : "Rice";
+        p._demo_yield_note = (2.0 + apSeededUnit(s0 + 444) * 2.6).toFixed(1);
+      });
+    }
+
+    function mandalPopupContent(properties, displayName) {
+      var wrap = document.createElement("div");
+      wrap.className = "ap-mandal-popup";
+      var h = document.createElement("h3");
+      h.textContent = displayName;
+      wrap.appendChild(h);
+      var total = properties._demo_mandal_total_ha;
+      var p1 = document.createElement("p");
+      p1.appendChild(document.createTextNode("Total crop area (demo): "));
+      var s1 = document.createElement("strong");
+      s1.textContent = (total != null ? Number(total) : 0).toLocaleString() + " ha";
+      p1.appendChild(s1);
+      wrap.appendChild(p1);
+      var py = document.createElement("p");
+      py.textContent = "Composite yield estimate (demo): ~" + String(properties._demo_yield_note) + " t/ha (area-weighted mix of crops below).";
+      wrap.appendChild(py);
+      var sec = document.createElement("p");
+      sec.style.fontWeight = "600";
+      sec.style.fontSize = "11px";
+      sec.style.marginTop = "10px";
+      sec.textContent = "Crops by area (map colour = dominant crop)";
+      wrap.appendChild(sec);
+      var table = document.createElement("table");
+      table.className = "ap-mandal-crop-table";
+      (properties._demo_mandal_breakdown || []).forEach(function (row) {
+        var tr = document.createElement("tr");
+        var td0 = document.createElement("td");
+        var sw = document.createElement("span");
+        sw.className = "ap-mandal-swatch";
+        sw.style.background = AP_CROP_COLORS[row.crop] || "#94a3b8";
+        sw.title = row.crop;
+        td0.appendChild(sw);
+        tr.appendChild(td0);
+        var td1 = document.createElement("td");
+        td1.textContent = row.crop;
+        tr.appendChild(td1);
+        var td2 = document.createElement("td");
+        td2.textContent = row.ha.toLocaleString() + " ha (" + row.pct + "%)";
+        tr.appendChild(td2);
+        table.appendChild(tr);
+      });
+      wrap.appendChild(table);
+      var hint = document.createElement("p");
+      hint.className = "panel-hint";
+      hint.style.marginTop = "10px";
+      hint.textContent = "Synthetic demo — not official crop statistics.";
+      wrap.appendChild(hint);
+      return wrap;
+    }
+
+    var apBaseOsm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(mapAp);
+    });
+    var apBaseEsri = L.tileLayer(
+      "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 19, attribution: "Tiles © Esri" }
+    );
+    var apBaseCurrent = apBaseOsm;
+    apBaseOsm.addTo(mapAp);
+
+    function apSetBasemap(useEsri) {
+      if ((useEsri && apBaseCurrent === apBaseEsri) || (!useEsri && apBaseCurrent === apBaseOsm)) return;
+      mapAp.removeLayer(apBaseCurrent);
+      apBaseCurrent = useEsri ? apBaseEsri : apBaseOsm;
+      apBaseCurrent.addTo(mapAp);
+      var btnO = document.getElementById("apBasemapOsm");
+      var btnE = document.getElementById("apBasemapEsri");
+      if (btnO && btnE) {
+        btnO.classList.toggle("ap-tool-active", !useEsri);
+        btnE.classList.toggle("ap-tool-active", useEsri);
+        btnO.setAttribute("aria-pressed", !useEsri);
+        btnE.setAttribute("aria-pressed", useEsri);
+      }
+      requestAnimationFrame(function () { mapAp.invalidateSize(false); });
+    }
+
+    document.getElementById("apBasemapOsm").addEventListener("click", function () { apSetBasemap(false); });
+    document.getElementById("apBasemapEsri").addEventListener("click", function () { apSetBasemap(true); });
+
+    function apRefreshCropFillOpacity() {
+      if (layers.cropFill) {
+        layers.cropFill.eachLayer(function (lyr) {
+          var crop = lyr.feature.properties._demo_primary_crop;
+          lyr.setStyle({
+            stroke: false,
+            weight: 0,
+            fill: true,
+            fillColor: AP_CROP_COLORS[crop] || "#94a3b8",
+            fillOpacity: apCropFillOpacity
+          });
+        });
+      }
+      if (layers.mandalCropFill) {
+        layers.mandalCropFill.eachLayer(function (lyr) {
+          var crop = lyr.feature.properties._demo_dominant_crop;
+          lyr.setStyle({
+            stroke: false,
+            weight: 0,
+            fill: true,
+            fillColor: AP_CROP_COLORS[crop] || "#94a3b8",
+            fillOpacity: apCropFillOpacity
+          });
+        });
+      }
+    }
+
+    document.getElementById("ap-crop-opacity").addEventListener("input", function () {
+      apCropFillOpacity = parseInt(this.value, 10) / 100;
+      apRefreshCropFillOpacity();
+    });
+
     L.control.scale({ imperial: false, metric: true, maxWidth: 200 }).addTo(mapAp);
     mapAp.setView([15.5, 79.5], 7);
 
-    var layers = { state: null, districts: null, mandals: null };
+    var layers = { state: null, districts: null, mandals: null, cropFill: null, mandalCropFill: null };
     var loadStatusEl = document.getElementById("load-status");
 
     function setLoadMessage(text, isError) {
@@ -680,6 +967,7 @@
     function showOnlyStateBoundary() {
       if (layers.districts && mapAp.hasLayer(layers.districts)) mapAp.removeLayer(layers.districts);
       if (layers.mandals && mapAp.hasLayer(layers.mandals)) mapAp.removeLayer(layers.mandals);
+      if (layers.mandalCropFill && mapAp.hasLayer(layers.mandalCropFill)) mapAp.removeLayer(layers.mandalCropFill);
       document.getElementById("toggle-districts").checked = false;
       document.getElementById("toggle-mandals").checked = false;
       if (layers.state && !mapAp.hasLayer(layers.state)) mapAp.addLayer(layers.state);
@@ -707,6 +995,29 @@
       });
     }
 
+    function wireMandalLayerEvents(geoJsonLayer, baseStyle) {
+      geoJsonLayer.eachLayer(function (layer) {
+        var feat = layer.feature;
+        var props = feat && feat.properties;
+        var name = getFeatureName(props);
+        layer.bindTooltip(name + " — click for crop mix", { sticky: true, direction: "auto", opacity: 0.95, className: "ap-tooltip" });
+        layer.on("mouseover", function () {
+          layer.setStyle(Object.assign({}, baseStyle, HIGHLIGHT.mandals));
+          if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) layer.bringToFront();
+        });
+        layer.on("mouseout", function () { layer.setStyle(baseStyle); });
+        layer.bindPopup(function () {
+          return mandalPopupContent(feat.properties || {}, getFeatureName(feat.properties || {}));
+        }, { maxWidth: 340, minWidth: 260 });
+        layer.on("click", function (e) {
+          L.DomEvent.stopPropagation(e);
+          var b = layer.getBounds && layer.getBounds();
+          if (b && b.isValid()) mapAp.fitBounds(b.pad(0.06), { maxZoom: 13, animate: true });
+          layer.openPopup(e.latlng);
+        });
+      });
+    }
+
     function loadGeoJson(url) {
       return fetch(url, { cache: "default" })
         .then(function (res) { if (!res.ok) throw new Error(res.status); return res.json(); })
@@ -726,6 +1037,59 @@
       return gj;
     }
 
+    function addCropFillLayer(data) {
+      if (!data || !data.features || !data.features.length) return null;
+      return L.geoJSON(data, {
+        pane: "apCropFill",
+        smoothFactor: 2.8,
+        interactive: false,
+        style: function (feat) {
+          var c = feat.properties._demo_primary_crop;
+          return {
+            stroke: false,
+            weight: 0,
+            fill: true,
+            fillColor: AP_CROP_COLORS[c] || "#94a3b8",
+            fillOpacity: apCropFillOpacity
+          };
+        }
+      });
+    }
+
+    function addMandalGeoJsonLayers(data) {
+      if (!data) return { outline: null, cropFill: null };
+      enrichApMandalCrops(data);
+      var mandalStroke = {
+        color: "#0f766e",
+        weight: 2,
+        opacity: 1,
+        fill: true,
+        fillColor: "#000000",
+        fillOpacity: 0
+      };
+      var gj = L.geoJSON(data, {
+        style: function () { return mandalStroke; },
+        smoothFactor: 2.2
+      });
+      wireMandalLayerEvents(gj, mandalStroke);
+      var fill = L.geoJSON(data, {
+        pane: "apMandalCropFill",
+        smoothFactor: 2.2,
+        interactive: false,
+        style: function (feat) {
+          var c = feat.properties._demo_dominant_crop;
+          return {
+            stroke: false,
+            weight: 0,
+            fill: true,
+            fillColor: AP_CROP_COLORS[c] || "#94a3b8",
+            fillOpacity: apCropFillOpacity
+          };
+        }
+      });
+      return { outline: gj, cropFill: fill };
+    }
+
     function fitToStudyArea() {
       var b = layers.state ? layers.state.getBounds() : layers.districts ? layers.districts.getBounds() : layers.mandals ? layers.mandals.getBounds() : null;
       if (b && b.isValid()) mapAp.fitBounds(b.pad(0.06), { maxZoom: 10, animate: false });
@@ -741,7 +1105,33 @@
     }
     bindToggle("toggle-state", "state");
     bindToggle("toggle-districts", "districts");
-    bindToggle("toggle-mandals", "mandals");
+
+    function syncApCropOverlays() {
+      var cropOn = document.getElementById("toggle-ap-crops").checked;
+      if (layers.cropFill) {
+        if (cropOn) mapAp.addLayer(layers.cropFill);
+        else mapAp.removeLayer(layers.cropFill);
+      }
+      if (layers.mandalCropFill) {
+        var mandalOn = document.getElementById("toggle-mandals").checked;
+        if (cropOn && mandalOn) mapAp.addLayer(layers.mandalCropFill);
+        else mapAp.removeLayer(layers.mandalCropFill);
+      }
+    }
+
+    function syncMandalOutline() {
+      if (layers.mandals) {
+        if (document.getElementById("toggle-mandals").checked) mapAp.addLayer(layers.mandals);
+        else mapAp.removeLayer(layers.mandals);
+      }
+      syncApCropOverlays();
+    }
+
+    document.getElementById("toggle-mandals").addEventListener("change", syncMandalOutline);
+
+    document.getElementById("toggle-ap-crops").addEventListener("change", function () {
+      syncApCropOverlays();
+    });
 
     Promise.all([
       loadGeoJson(GEOJSON_URLS.state),
@@ -751,10 +1141,15 @@
       var messages = [];
       layers.state = addGeoJsonLayer(results[0], "state");
       if (!layers.state) messages.push("State outline missing (ap_boundary.geojson).");
+      if (results[1]) enrichApDistrictCrops(results[1]);
       layers.districts = addGeoJsonLayer(results[1], "districts", 2.8);
       if (!layers.districts) messages.push("District file missing.");
-      layers.mandals = addGeoJsonLayer(results[2], "mandals", 2.2);
+      var mandalPair = addMandalGeoJsonLayers(results[2]);
+      layers.mandals = mandalPair.outline;
+      layers.mandalCropFill = mandalPair.cropFill;
       if (!layers.mandals) messages.push("Mandal file missing.");
+      layers.cropFill = addCropFillLayer(results[1]);
+      syncMandalOutline();
       if (layers.state || layers.districts || layers.mandals) {
         fitToStudyArea();
         setLoadMessage(messages.length ? "Map ready. Note: " + messages.join(" ") : "All layers loaded.");
