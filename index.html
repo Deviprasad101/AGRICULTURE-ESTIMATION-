@@ -120,7 +120,7 @@
     }
 
     .swatch.mandal {
-      background: #9ca3af;
+      background: #0f766e;
       height: 3px;
     }
 
@@ -132,6 +132,13 @@
 
     .status.error {
       color: #b91c1c;
+    }
+
+    .panel-hint {
+      margin: 10px 0 0;
+      font-size: 11px;
+      color: #666;
+      line-height: 1.4;
     }
 
     /* Leaflet popup: readable detail list */
@@ -158,7 +165,7 @@
     Local tip: opening this file as file:// may block fetch() for .geojson (browser security).
     Serve the folder over HTTP, e.g. PowerShell:  python -m http.server 8080
     Then open http://localhost:8080/index.html
-    District layer loads geojson_ap.geojson from the same folder (large file — use a local server).
+    Serve over HTTP for GeoJSON fetch. By default state, district, and mandal boundaries are shown.
   -->
   <div id="map" role="application" aria-label="Interactive map of Andhra Pradesh"></div>
 
@@ -179,6 +186,7 @@
         <input type="checkbox" id="toggle-mandals" checked />
         <span>Mandal boundaries</span>
       </label>
+      <p class="panel-hint">Click a state outline to show only the state layer; use the checkboxes to show districts or mandals again.</p>
     </section>
 
     <section aria-labelledby="legend-heading">
@@ -193,7 +201,7 @@
       </div>
       <div class="legend-item">
         <span class="swatch mandal" aria-hidden="true"></span>
-        <span>Mandal — thin gray outline</span>
+        <span>Mandal — teal outline</span>
       </div>
       <p class="status" style="margin-top:8px;color:#666;">Fills are transparent (no obscuring the basemap).</p>
     </section>
@@ -214,11 +222,11 @@
 
       /* -----------------------------------------------------------------------
          Configuration: GeoJSON URLs and visual styles
-         District boundaries: geojson_ap.geojson (primary AP dataset).
-         Optional: ap_state.geojson, ap_mandals.geojson if you add them later.
+         State: ap_boundary.geojson — single AP outline (from build_ap_boundary.py).
+         Districts: geojson_ap.geojson. Mandals: ap_mandals.geojson (build_ap_mandals.py).
          ----------------------------------------------------------------------- */
       var GEOJSON_URLS = {
-        state: "ap_state.geojson",
+        state: "ap_boundary.geojson",
         districts: "geojson_ap.geojson",
         mandals: "ap_mandals.geojson"
       };
@@ -241,9 +249,10 @@
           fillOpacity: 0
         },
         mandals: {
-          color: "#9ca3af",
-          weight: 1,
-          opacity: 0.9,
+          /* Teal: reads clearly on OSM greens and under blue district lines */
+          color: "#0f766e",
+          weight: 2,
+          opacity: 1,
           fill: true,
           fillColor: "#000000",
           fillOpacity: 0
@@ -253,7 +262,7 @@
       var HIGHLIGHT = {
         state: { weight: 6, color: "#ef4444", fillOpacity: 0.08 },
         districts: { weight: 3, color: "#3b82f6", fillOpacity: 0.06 },
-        mandals: { weight: 2, color: "#6b7280", fillOpacity: 0.05 }
+        mandals: { weight: 3, color: "#14b8a6", fillOpacity: 0.06 }
       };
 
       /* -----------------------------------------------------------------------
@@ -352,6 +361,24 @@
       }
 
       /* -----------------------------------------------------------------------
+         Solo state view: hide district & mandal layers (used on state click).
+         ----------------------------------------------------------------------- */
+      function showOnlyStateBoundary() {
+        if (layers.districts && map.hasLayer(layers.districts)) {
+          map.removeLayer(layers.districts);
+        }
+        if (layers.mandals && map.hasLayer(layers.mandals)) {
+          map.removeLayer(layers.mandals);
+        }
+        document.getElementById("toggle-districts").checked = false;
+        document.getElementById("toggle-mandals").checked = false;
+        if (layers.state && !map.hasLayer(layers.state)) {
+          map.addLayer(layers.state);
+        }
+        document.getElementById("toggle-state").checked = true;
+      }
+
+      /* -----------------------------------------------------------------------
          Attach hover (highlight + tooltip) and click (fitBounds + popup)
          ----------------------------------------------------------------------- */
       function wireLayerEvents(geoJsonLayer, layerType, baseStyle) {
@@ -381,6 +408,10 @@
 
           layer.on("click", function (e) {
             L.DomEvent.stopPropagation(e);
+            /* State boundary click: show only the state layer; hide others. */
+            if (layerType === "state") {
+              showOnlyStateBoundary();
+            }
             var b = layer.getBounds && layer.getBounds();
             if (b && b.isValid()) {
               map.fitBounds(b.pad(0.08), { maxZoom: 14, animate: true });
@@ -478,14 +509,15 @@
         var messages = [];
 
         layers.state = addGeoJsonLayer(stateData, "state");
-        if (!layers.state) messages.push("State file missing or invalid.");
+        if (!layers.state) messages.push("State outline missing (ap_boundary.geojson). Run build_ap_boundary.py if needed.");
 
         /* geojson_ap.geojson is very vertex-dense; higher smoothFactor keeps pan/zoom usable. */
         layers.districts = addGeoJsonLayer(districtData, "districts", 2.8);
         if (!layers.districts) messages.push("District file missing or invalid.");
 
-        layers.mandals = addGeoJsonLayer(mandalData, "mandals");
-        if (!layers.mandals) messages.push("Mandal file missing or invalid.");
+        /* Many mandal polygons — higher smoothFactor helps Leaflet stay responsive. */
+        layers.mandals = addGeoJsonLayer(mandalData, "mandals", 2.2);
+        if (!layers.mandals) messages.push("Mandal file missing (ap_mandals.geojson). Run build_ap_mandals.py.");
 
         if (layers.state || layers.districts || layers.mandals) {
           fitToStudyArea();
@@ -496,7 +528,7 @@
           );
         } else {
           setLoadMessage(
-            "No GeoJSON could be loaded. Add geojson_ap.geojson (districts) next to this HTML file.",
+            "No GeoJSON could be loaded. Add ap_boundary.geojson and geojson_ap.geojson next to this HTML file.",
             true
           );
         }

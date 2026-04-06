@@ -1,0 +1,2 @@
+# Large download used only to build ap_mandals.geojson (re-fetch with build_ap_mandals.py)
+SubDistricts_2011.parquet
