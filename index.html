@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AP Agriculture — State boundaries & Chinagottigallu crop dashboard</title>
+  <title>AP Agriculture — Maps, crops, GeoAI & split satellite/fields view</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
@@ -23,7 +23,8 @@
     }
     .app-tabs button {
       flex: 1;
-      max-width: 400px;
+      min-width: 0;
+      max-width: none;
       padding: 14px 20px;
       border: none;
       background: transparent;
@@ -476,12 +477,231 @@
       #view-tirupati .tp-stats-row { grid-template-columns: 1fr 1fr; }
       #view-tirupati .tp-meta { display: none; }
     }
+
+    /* ═══ VIEW: GeoAI field boundaries (doc / pipeline) ═══ */
+    #view-geoai {
+      min-height: calc(100vh - 49px);
+      background: #f1f5f9;
+      color: #0f172a;
+      font-family: "DM Sans", system-ui, sans-serif;
+      line-height: 1.55;
+    }
+    #view-geoai .geoai-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+    #view-geoai h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0 0 8px;
+      color: #0f172a;
+    }
+    #view-geoai .geoai-lead {
+      font-size: 14px;
+      color: #475569;
+      margin: 0 0 20px;
+    }
+    #view-geoai h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+      margin: 28px 0 10px;
+      font-weight: 700;
+    }
+    #view-geoai h3 { font-size: 15px; margin: 18px 0 8px; color: #1e293b; }
+    #view-geoai p, #view-geoai li { font-size: 14px; color: #334155; margin: 8px 0; }
+    #view-geoai ul { padding-left: 1.25rem; }
+    #view-geoai .geoai-note {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #78350f;
+      margin: 16px 0;
+    }
+    #view-geoai .geoai-code {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      font-family: "Space Mono", ui-monospace, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      margin: 12px 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    #view-geoai table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 12px 0;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    #view-geoai th, #view-geoai td {
+      border: 1px solid #e2e8f0;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    #view-geoai th { background: #f8fafc; font-weight: 600; color: #475569; }
+    #view-geoai a { color: #2563eb; }
+    #view-geoai .geoai-badge {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1e40af;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    /* ═══ Split compare: satellite vs fields (Chinagottigallu, AP) ═══ */
+    #view-split-ap {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 49px);
+      background: #0f172a;
+      font-family: "DM Sans", system-ui, sans-serif;
+    }
+    #view-split-ap .split-ap-toolbar {
+      flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #334155;
+      color: #e2e8f0;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    #view-split-ap .split-ap-toolbar strong { color: #4ade80; }
+    #view-split-ap .split-ap-toolbar .split-ap-hint { color: #94a3b8; font-size: 12px; max-width: 640px; }
+    #view-split-ap .split-ap-btn {
+      margin-left: auto;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #view-split-ap .split-ap-btn:hover { border-color: #4ade80; color: #4ade80; }
+    #view-split-ap .split-ap-maps {
+      flex: 1;
+      min-height: 220px;
+      position: relative;
+    }
+    /* Bottom layer: clean satellite (always visible, full area) */
+    #view-split-ap #map-split-ap-base {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+    /* Right strip overlay: edges + fields — clipped from right edge to slider */
+    #view-split-ap .split-ap-swipe-mask {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      max-width: 100%;
+      overflow: hidden;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #view-split-ap .split-ap-swipe-inner {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      height: 100%;
+      pointer-events: none;
+    }
+    #view-split-ap #map-split-ap-top {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      pointer-events: none;
+    }
+    #view-split-ap #map-split-ap-top.leaflet-container { pointer-events: none; }
+    /* Avoid visible tile seams / grid squares on raster + canvas tiles */
+    #view-split-ap .leaflet-tile-container img.leaflet-tile,
+    #view-split-ap .leaflet-tile-container canvas.leaflet-tile {
+      border: none !important;
+      outline: none;
+      box-shadow: none;
+    }
+    #view-split-ap .split-ap-label {
+      position: absolute;
+      top: 10px;
+      z-index: 25;
+      background: rgba(15, 23, 42, 0.82);
+      color: #e2e8f0;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      pointer-events: none;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+    #view-split-ap .split-ap-label-base { left: 10px; }
+    #view-split-ap .split-ap-label-fields { right: 10px; }
+    #view-split-ap .split-ap-slider {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 28px;
+      z-index: 30;
+      cursor: col-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      transform: translateX(-50%);
+      pointer-events: auto;
+    }
+    #view-split-ap .split-ap-slider-line {
+      width: 3px;
+      height: 100%;
+      background: #fff;
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.65);
+      border-radius: 1px;
+      pointer-events: none;
+    }
+    #view-split-ap .split-ap-slider-knob {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #0f172a;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+    }
+    #view-split-ap .split-ap-status { font-size: 12px; color: #fbbf24; }
   </style>
 </head>
 <body>
   <nav class="app-tabs" role="tablist" aria-label="Application views">
     <button type="button" class="active" role="tab" aria-selected="true" data-view="ap" id="tab-ap">Andhra Pradesh — boundaries</button>
     <button type="button" role="tab" aria-selected="false" data-view="tirupati" id="tab-tirupati">Chinagottigallu — crop dashboard</button>
+    <button type="button" role="tab" aria-selected="false" data-view="geoai" id="tab-geoai">AP — field boundaries (GeoAI)</button>
+    <button type="button" role="tab" aria-selected="false" data-view="splitap" id="tab-split-ap">Split: satellite ⟷ fields</button>
   </nav>
 
   <!-- ═══ AP state map ═══ -->
@@ -624,6 +844,182 @@
     </div>
   </div>
 
+  <!-- ═══ GeoAI / FTW field boundary pipeline (Andhra Pradesh focus) ═══ -->
+  <div id="view-geoai" class="view" role="tabpanel" aria-labelledby="tab-geoai" hidden>
+    <div class="geoai-inner">
+      <span class="geoai-badge">Python + geoai-py · Fields of The World (FTW)</span>
+      <h1>Field boundary detection with instance segmentation (Andhra Pradesh)</h1>
+      <p class="geoai-lead">
+        This page documents the same end-to-end workflow as the Mask&nbsp;R-CNN + FTW tutorial: Sentinel-2 chips (RGB+NIR, 10&nbsp;m),
+        instance masks, training, inference, cleaning, and vector polygons. Training and inference run in a Python environment
+        (not in the browser). For India-related work—including areas in <strong>Andhra Pradesh</strong>—use the FTW
+        <strong>India</strong> subset; then clip or filter predicted vectors to your AP AOI using district or mandal boundaries.
+      </p>
+
+      <div class="geoai-note">
+        <strong>Note (FTW India):</strong> The FTW benchmark includes an India country pack. Some documentation describes
+        India (and a few other countries) as using <em>presence-only</em> or simplified labelling in parts of the benchmark.
+        Check the latest FTW / TorchGeo notes for label semantics. For a small reproducible tutorial, you can still run the
+        Luxembourg subset first, then repeat the same commands with <code>country="india"</code>.
+      </div>
+
+      <h2>Why this matters</h2>
+      <p>
+        Accurate field boundary delineation supports precision agriculture, crop monitoring, subsidy verification, and land-use planning.
+        Instance segmentation assigns a <em>separate</em> mask ID per field parcel, which is stronger than a single “all fields” mask.
+      </p>
+
+      <h2>1. Install</h2>
+      <div class="geoai-code"># pip install geoai-py
+# Use a virtual environment (recommended)
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+pip install geoai-py geopandas</div>
+
+      <h2>2. Download FTW data (India for AP-focused work)</h2>
+      <p>
+        FTW provides 256×256 chips with four Sentinel-2 bands (R, G, B, NIR) and instance masks; many regions include two temporal windows
+        (<code>window_a</code> / <code>window_b</code>) to exploit seasonal contrast.
+      </p>
+      <div class="geoai-code">import geoai
+
+geoai.download_ftw(countries=["india"], output_dir="ftw_data")
+
+# Smallest tutorial subset (optional first run):
+# geoai.download_ftw(countries=["luxembourg"], output_dir="ftw_data")</div>
+
+      <h2>3. Explore chips (GeoParquet)</h2>
+      <div class="geoai-code">import os
+from pathlib import Path
+import geopandas as gpd
+
+country = "india"  # or "luxembourg"
+country_dir = os.path.join("ftw_data", country)
+chips_gdf = gpd.read_parquet(os.path.join(country_dir, "chips_india.parquet"))  # or chips_luxembourg.parquet
+print(len(chips_gdf), chips_gdf["split"].value_counts())
+
+# Optional: filter chips intersecting an Andhra Pradesh bbox or your AOI shapefile
+# aoi = gpd.read_file("your_ap_aoi.geojson")
+# chips_gdf = chips_gdf[chips_gdf.geometry.intersects(aoi.union_all())]</div>
+
+      <h2>4. Prepare training tiles</h2>
+      <div class="geoai-code">data = geoai.prepare_ftw("ftw_data", country="india")
+data</div>
+
+      <h2>5. Train Mask R-CNN (instance segmentation)</h2>
+      <p>
+        <code>num_classes=2</code> → background vs field.
+        <code>num_channels=4</code> → Sentinel-2 R,G,B,NIR.
+        <code>instance_labels=True</code> → use FTW instance IDs in masks.
+      </p>
+      <div class="geoai-code">geoai.train_instance_segmentation_model(
+    images_dir=data["images_dir"],
+    labels_dir=data["labels_dir"],
+    output_dir="field_boundaries/models",
+    num_classes=2,
+    num_channels=4,
+    batch_size=4,
+    num_epochs=20,
+    learning_rate=0.005,
+    val_split=0.2,
+    instance_labels=True,
+    visualize=True,
+    verbose=True,
+)</div>
+
+      <h2>6. Inference on a test chip</h2>
+      <div class="geoai-code">from pathlib import Path
+
+test_images = sorted(Path(data["test_dir"]).glob("*.tif"))
+test_image_path = str(test_images[0])
+masks_path = "field_boundary_prediction.tif"
+model_path = "field_boundaries/models/best_model.pth"
+
+result = geoai.instance_segmentation(
+    input_path=test_image_path,
+    output_path=masks_path,
+    model_path=model_path,
+    num_classes=2,
+    num_channels=4,
+    window_size=256,
+    overlap=128,
+    confidence_threshold=0.5,
+    batch_size=4,
+    vectorize=True,
+    class_names=["background", "field"],
+)</div>
+
+      <h2>7. Clean instance mask → vector → properties</h2>
+      <div class="geoai-code">cleaned_masks_path = "field_boundary_prediction_cleaned.tif"
+geoai.clean_instance_mask(
+    result["instance"], cleaned_masks_path, min_area=100, max_hole_area=100
+)
+
+output_vector_path = "field_boundary_prediction.geojson"
+gdf = geoai.raster_to_vector(cleaned_masks_path, output_vector_path)
+gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")</div>
+
+      <h2>Geometric properties (from GeoAI)</h2>
+      <table>
+        <thead><tr><th>Property</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Area</td><td>Field size (e.g. ha) — yield and subsidy context</td></tr>
+          <tr><td>Perimeter</td><td>Boundary length (e.g. fencing)</td></tr>
+          <tr><td>Elongation</td><td>Major/minor axis ratio — strip vs compact parcels</td></tr>
+          <tr><td>Solidity</td><td>Area / convex hull area — boundary irregularity</td></tr>
+          <tr><td>Extent</td><td>Area / bounding-box area — rectangularity</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Andhra Pradesh: how to connect outputs to this app</h2>
+      <ol style="padding-left:1.25rem;margin:12px 0">
+        <li>Train or fine-tune on FTW India chips; run inference on your own Sentinel-2 mosaics clipped to AP if needed.</li>
+        <li>Export polygons as GeoJSON (or GeoPackage) in WGS84.</li>
+        <li>Optional: clip polygons to mandal/district boundaries from your existing <code>geojson_ap.geojson</code> / <code>ap_mandals.geojson</code>.</li>
+        <li>Replace or merge with <code>data/chinagottigallu_fields.geojson</code> or serve a new layer in the map views.</li>
+      </ol>
+
+      <h2>Repository script</h2>
+      <p>
+        A runnable template script is in <code>scripts/ap_field_boundaries_ftw_geoai.py</code> (download → prepare → optional train/inference).
+        Run it from the project root after installing <code>geoai-py</code>. GPU is recommended for training.
+      </p>
+
+      <h2>References</h2>
+      <ul>
+        <li>Fields of The World (dataset &amp; paper): <a href="https://fieldsofthe.world/" target="_blank" rel="noopener noreferrer">fieldsofthe.world</a></li>
+        <li>GeoAI FTW helpers: <a href="https://opengeoai.org/ftw/" target="_blank" rel="noopener noreferrer">opengeoai.org/ftw</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Split swipe: one AP sample (Chinagottigallu fields on satellite) ═══ -->
+  <div id="view-split-ap" class="view" role="tabpanel" aria-labelledby="tab-split-ap" hidden>
+    <div class="split-ap-toolbar">
+      <div>
+        <strong>Chinagottigallu · Pellakuru Mandal · Tirupati district (Andhra Pradesh)</strong>
+        <div class="split-ap-hint"><strong>Drag the white line.</strong> <strong>Left</strong> = clean satellite imagery. <strong>Right of the line</strong> = edge detection only (green Sobel glow from satellite pixels)—demo field polygons are hidden here so they do not cover the edges. Click the map for field popups (invisible hit areas). Pan and zoom freely.</div>
+      </div>
+      <button type="button" class="split-ap-btn" id="btnSplitApFit">Fit fields</button>
+    </div>
+    <div class="split-ap-maps" id="splitApMapsRoot">
+      <div id="map-split-ap-base" role="application" aria-label="Satellite with field boundaries"></div>
+      <div class="split-ap-swipe-mask" id="splitApSwipeMask">
+        <div class="split-ap-swipe-inner" id="splitApSwipeInner">
+          <div id="map-split-ap-top" role="application" aria-label="Satellite and edge detection overlay"></div>
+        </div>
+      </div>
+      <span class="split-ap-label split-ap-label-base">Satellite</span>
+      <span class="split-ap-label split-ap-label-fields">Edge detection</span>
+      <div class="split-ap-slider" id="splitApSlider" role="slider" aria-orientation="vertical" aria-valuemin="8" aria-valuemax="92" aria-valuenow="50" aria-label="Drag to show basemap on the left, field detection on the right" title="Drag to compare">
+        <span class="split-ap-slider-line" aria-hidden="true"></span>
+        <span class="split-ap-slider-knob" aria-hidden="true"></span>
+      </div>
+    </div>
+    <p id="splitApStatus" class="split-ap-status" style="margin:0;padding:6px 16px 10px" aria-live="polite"></p>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
 (function () {
@@ -631,23 +1027,38 @@
 
   var tabAp = document.getElementById("tab-ap");
   var tabTp = document.getElementById("tab-tirupati");
+  var tabGeoai = document.getElementById("tab-geoai");
+  var tabSplitAp = document.getElementById("tab-split-ap");
   var viewAp = document.getElementById("view-ap");
   var viewTp = document.getElementById("view-tirupati");
+  var viewGeoai = document.getElementById("view-geoai");
+  var viewSplitAp = document.getElementById("view-split-ap");
 
   function showView(which) {
     var isAp = which === "ap";
+    var isTp = which === "tirupati";
+    var isGeoai = which === "geoai";
+    var isSplit = which === "splitap";
     tabAp.classList.toggle("active", isAp);
-    tabTp.classList.toggle("active", !isAp);
-    tabAp.setAttribute("aria-selected", isAp);
-    tabTp.setAttribute("aria-selected", !isAp);
+    tabTp.classList.toggle("active", isTp);
+    tabGeoai.classList.toggle("active", isGeoai);
+    tabSplitAp.classList.toggle("active", isSplit);
+    tabAp.setAttribute("aria-selected", isAp ? "true" : "false");
+    tabTp.setAttribute("aria-selected", isTp ? "true" : "false");
+    tabGeoai.setAttribute("aria-selected", isGeoai ? "true" : "false");
+    tabSplitAp.setAttribute("aria-selected", isSplit ? "true" : "false");
     viewAp.classList.toggle("active", isAp);
-    viewTp.classList.toggle("active", !isAp);
+    viewTp.classList.toggle("active", isTp);
+    viewGeoai.classList.toggle("active", isGeoai);
+    viewSplitAp.classList.toggle("active", isSplit);
     viewAp.hidden = !isAp;
-    viewTp.hidden = isAp;
+    viewTp.hidden = !isTp;
+    viewGeoai.hidden = !isGeoai;
+    viewSplitAp.hidden = !isSplit;
     if (isAp && window.__mapAp) {
       setTimeout(function () { window.__mapAp.invalidateSize(); }, 150);
     }
-    if (!isAp) {
+    if (isTp) {
       if (!window.__tirupatiInited) {
         initTirupatiDashboard();
         window.__tirupatiInited = true;
@@ -656,10 +1067,253 @@
         if (window.__mapTirupati && typeof window.__mapTirupati.resize === "function") window.__mapTirupati.resize();
       }, 150);
     }
+    if (isSplit) {
+      if (!window.__splitApInited) {
+        initSplitApCompare();
+        window.__splitApInited = true;
+      }
+      setTimeout(function () {
+        if (window.__mapSplitApBase) window.__mapSplitApBase.invalidateSize();
+        if (window.__mapSplitApTop) window.__mapSplitApTop.invalidateSize();
+        if (window.__splitApRefreshSize) window.__splitApRefreshSize();
+      }, 200);
+    }
   }
 
   tabAp.addEventListener("click", function () { showView("ap"); });
   tabTp.addEventListener("click", function () { showView("tirupati"); });
+  tabGeoai.addEventListener("click", function () { showView("geoai"); });
+  tabSplitAp.addEventListener("click", function () { showView("splitap"); });
+
+  function initSplitApCompare() {
+    var FIELDS_URL = "data/chinagottigallu_fields.geojson";
+    var root = document.getElementById("splitApMapsRoot");
+    var mask = document.getElementById("splitApSwipeMask");
+    var inner = document.getElementById("splitApSwipeInner");
+    var slider = document.getElementById("splitApSlider");
+
+    /* ── Sobel edge-detection tile layer ── */
+    var EdgeTileLayer = L.TileLayer.extend({
+      createTile: function (coords, done) {
+        var tile = document.createElement("canvas");
+        var size = this.getTileSize();
+        tile.width = size.x;
+        tile.height = size.y;
+        var ctx = tile.getContext("2d", { willReadFrequently: true });
+        var img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = function () {
+          ctx.drawImage(img, 0, 0, size.x, size.y);
+          try {
+            var src = ctx.getImageData(0, 0, size.x, size.y);
+            var out = ctx.createImageData(size.x, size.y);
+            var sd = src.data;
+            var od = out.data;
+            var w = size.x;
+            var h = size.y;
+            function lum(ix, iy) {
+              var cx = ix < 0 ? 0 : ix >= w ? w - 1 : ix;
+              var cy = iy < 0 ? 0 : iy >= h ? h - 1 : iy;
+              var i = (cy * w + cx) * 4;
+              return sd[i] * 0.299 + sd[i + 1] * 0.587 + sd[i + 2] * 0.114;
+            }
+            for (var y = 0; y < h; y++) {
+              for (var x = 0; x < w; x++) {
+                var l00 = lum(x - 1, y - 1);
+                var l01 = lum(x, y - 1);
+                var l02 = lum(x + 1, y - 1);
+                var l10 = lum(x - 1, y);
+                var l12 = lum(x + 1, y);
+                var l20 = lum(x - 1, y + 1);
+                var l21 = lum(x, y + 1);
+                var l22 = lum(x + 1, y + 1);
+                var gx = -l00 - 2 * l10 - l20 + l02 + 2 * l12 + l22;
+                var gy = -l00 - 2 * l01 - l02 + l20 + 2 * l21 + l22;
+                var mag = Math.min(255, Math.sqrt(gx * gx + gy * gy) * 1.6);
+                var p = (y * w + x) * 4;
+                od[p] = 0;
+                od[p + 1] = Math.round(mag * 0.92);
+                od[p + 2] = 0;
+                od[p + 3] = Math.round(mag);
+              }
+            }
+            ctx.putImageData(out, 0, 0);
+          } catch (e) {
+            /* CORS tainted canvas — show tile as-is */
+          }
+          done(null, tile);
+        };
+        img.onerror = function () { done(new Error("tile"), tile); };
+        img.src = L.TileLayer.prototype.getTileUrl.call(this, coords);
+        return tile;
+      }
+    });
+
+    var satUrl = "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+    var satOpts = { maxZoom: 19, attribution: "© Esri" };
+
+    var defaultCenter = [13.612, 79.948];
+    var defaultZoom = 14;
+    var mapBase = L.map("map-split-ap-base", { zoomControl: true, preferCanvas: false }).setView(defaultCenter, defaultZoom);
+    var mapTop = L.map("map-split-ap-top", {
+      zoomControl: false,
+      preferCanvas: false,
+      attributionControl: false
+    }).setView(defaultCenter, defaultZoom);
+    window.__mapSplitApBase = mapBase;
+    window.__mapSplitApTop = mapTop;
+
+    L.tileLayer(satUrl, satOpts).addTo(mapBase);
+    L.tileLayer(satUrl, satOpts).addTo(mapTop);
+    new EdgeTileLayer(satUrl, Object.assign({}, satOpts, { opacity: 0.7 })).addTo(mapTop);
+
+    /* ── Smooth pixel-perfect sync (use "move" for every frame) ── */
+    var syncLock = false;
+    function syncTopToBase() {
+      if (syncLock) return;
+      syncLock = true;
+      mapTop.setView(mapBase.getCenter(), mapBase.getZoom(), { animate: false, duration: 0 });
+      syncLock = false;
+    }
+    mapBase.on("move", syncTopToBase);
+    mapBase.on("zoom", syncTopToBase);
+    mapBase.on("moveend", syncTopToBase);
+    mapBase.on("zoomend", syncTopToBase);
+
+    function updateSwipeInnerWidth() {
+      if (!root || !inner) return;
+      var w = root.offsetWidth;
+      inner.style.width = w + "px";
+      var topEl = document.getElementById("map-split-ap-top");
+      if (topEl) topEl.style.width = w + "px";
+      mapBase.invalidateSize({ pan: false });
+      mapTop.invalidateSize({ pan: false });
+      syncTopToBase();
+    }
+
+    window.__splitApRefreshSize = function () {
+      updateSwipeInnerWidth();
+    };
+
+    if (typeof ResizeObserver !== "undefined" && root) {
+      new ResizeObserver(function () { updateSwipeInnerWidth(); }).observe(root);
+    }
+    window.addEventListener("resize", updateSwipeInnerWidth);
+
+    var splitPct = 50;
+    function applySplit(pct) {
+      splitPct = Math.max(8, Math.min(92, pct));
+      if (mask) mask.style.width = (100 - splitPct) + "%";
+      if (slider) {
+        slider.style.left = splitPct + "%";
+        slider.setAttribute("aria-valuenow", String(Math.round(splitPct)));
+      }
+    }
+    applySplit(50);
+
+    var fieldsLayer = null;
+    var statusEl = document.getElementById("splitApStatus");
+
+    function splitCropColor(crop) {
+      var pal = {
+        Paddy: "#4ade80",
+        Sugarcane: "#fbbf24",
+        Groundnut: "#fb923c",
+        Cotton: "#e5e5e5",
+        Mango: "#f472b6",
+        Vegetables: "#60a5fa",
+        Chilli: "#f87171",
+        Fallow: "#9ca3af"
+      };
+      return pal[crop] || "#a855f7";
+    }
+
+    function fitBoth() {
+      if (fieldsLayer && fieldsLayer.getBounds && fieldsLayer.getBounds().isValid()) {
+        var b = fieldsLayer.getBounds().pad(0.12);
+        mapBase.fitBounds(b, { animate: false });
+        syncTopToBase();
+      }
+      updateSwipeInnerWidth();
+    }
+
+    document.getElementById("btnSplitApFit").addEventListener("click", fitBoth);
+
+    fetch(FIELDS_URL, { cache: "default" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (geojson) {
+        var idx = 0;
+        /* Demo parcels are large quads in GeoJSON; drawing them on the right hid the Sobel edges—keep them off mapTop. */
+        fieldsLayer = L.geoJSON(geojson, {
+          style: function () {
+            return { color: "transparent", weight: 0, fillColor: "transparent", fillOpacity: 0, opacity: 0 };
+          },
+          onEachFeature: function (feat, layer) {
+            var p = feat.properties || {};
+            var fid = p.field_id || String(++idx);
+            var col = splitCropColor(p.crop || "Fallow");
+            var lines =
+              "<div style=\"font:12px system-ui,sans-serif;min-width:200px\">" +
+              "<div style=\"display:flex;align-items:center;gap:6px;margin-bottom:4px\">" +
+              "<span style=\"width:14px;height:14px;border-radius:3px;background:" + col + ";border:1px solid rgba(0,0,0,0.2);flex-shrink:0\"></span>" +
+              "<strong style=\"color:#0f172a\">" + String(fid).replace(/</g, "&lt;") + " — " + String(p.crop || "—").replace(/</g, "&lt;") + "</strong></div>" +
+              "<span style=\"color:#334155;font-size:12px\">Farmer: " + String(p.farmer || "—").replace(/</g, "&lt;") + "</span><br/>" +
+              "<span style=\"color:#334155;font-size:12px\">Area: " + (p.area_ac != null ? Number(p.area_ac) + " ac" : "—") + "</span><br/>" +
+              "<span style=\"color:#334155;font-size:12px\">Yield: " + String(p.yield || "—").replace(/</g, "&lt;") + "</span><br/>" +
+              "<span style=\"color:#64748b;font-size:11px\">" + String(p.village || "Chinagottigallu") + " · " + String(p.mandal || "Pellakuru") + "</span>" +
+              "</div>";
+            layer.bindPopup(lines, { maxWidth: 280 });
+          }
+        });
+        fieldsLayer.addTo(mapBase);
+
+        fitBoth();
+        if (statusEl) statusEl.textContent = "";
+      })
+      .catch(function (err) {
+        if (statusEl) {
+          statusEl.textContent =
+            "Could not load " +
+            FIELDS_URL +
+            " — serve the site over HTTP and ensure the file exists. (" +
+            (err && err.message ? err.message : "error") +
+            ")";
+        }
+        mapBase.setView([13.612, 79.948], 14);
+        syncTopToBase();
+        updateSwipeInnerWidth();
+      });
+
+    /* ── Drag slider ── */
+    var drag = false;
+    function setSplitFromClientX(clientX) {
+      if (!root) return;
+      var rect = root.getBoundingClientRect();
+      var x = clientX - rect.left;
+      applySplit((x / rect.width) * 100);
+    }
+
+    if (slider) {
+      slider.addEventListener("mousedown", function (e) { drag = true; e.preventDefault(); });
+      slider.addEventListener("touchstart", function (e) {
+        drag = true;
+        if (e.touches.length) setSplitFromClientX(e.touches[0].clientX);
+      }, { passive: true });
+    }
+    document.addEventListener("mousemove", function (e) {
+      if (drag && root) setSplitFromClientX(e.clientX);
+    });
+    document.addEventListener("touchmove", function (e) {
+      if (drag && e.touches.length) setSplitFromClientX(e.touches[0].clientX);
+    }, { passive: true });
+    document.addEventListener("mouseup", function () { drag = false; });
+    document.addEventListener("touchend", function () { drag = false; });
+
+    setTimeout(updateSwipeInnerWidth, 100);
+  }
 
   /* ─── Andhra Pradesh map ─── */
   (function apMap() {
