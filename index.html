@@ -683,17 +683,24 @@
       right: 0;
       top: 0;
       bottom: 0;
-      pointer-events: none;
     }
     /*
-      Leaflet sets pointer-events: auto on .leaflet-pane etc. Children override the
-      container’s none — drags on the right were panning only mapTop, so the left
-      (mapBase) stayed fixed. Force the whole top map subtree to ignore pointers so
-      pan/zoom/click always hit mapBase underneath (one interaction surface).
+      Top map sits above the base (z-index). If every pane has pointer-events: none,
+      hits fall through to mapBase — but mandals on base use pane z-index 350 while
+      GeoJSON fields use overlay ~400, so invisible fields can steal clicks on the right.
+      Instead: disable dragging on mapTop (JS) and only the mandal pane receives events;
+      Sobel edge + tiles stay non-interactive. Popups open on mapBase so they are not
+      clipped by .split-ap-swipe-mask { overflow: hidden }.
     */
-    #view-split-ap #map-split-ap-top.leaflet-container,
-    #view-split-ap #map-split-ap-top.leaflet-container * {
+    #view-split-ap #map-split-ap-top.leaflet-container {
       pointer-events: none !important;
+    }
+    #view-split-ap #map-split-ap-top.leaflet-container .leaflet-pane {
+      pointer-events: none !important;
+    }
+    #view-split-ap #map-split-ap-top.leaflet-container .leaflet-splitApBoundary-pane,
+    #view-split-ap #map-split-ap-top.leaflet-container .leaflet-splitApBoundary-pane * {
+      pointer-events: auto !important;
     }
     /* Avoid visible tile seams / grid squares on raster + canvas tiles */
     #view-split-ap .leaflet-tile-container img.leaflet-tile,
@@ -1239,10 +1246,18 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
       zoomDelta: 1,
       wheelPxPerZoomLevel: 120
     }).setView(defaultCenter, defaultZoom);
+    mapTop.dragging.disable();
+    mapTop.scrollWheelZoom.disable();
+    mapTop.doubleClickZoom.disable();
+    mapTop.boxZoom.disable();
+    mapTop.keyboard.disable();
+    if (mapTop.tap && mapTop.tap.disable) mapTop.tap.disable();
     window.__mapSplitApBase = mapBase;
     window.__mapSplitApTop = mapTop;
 
-    mapBase.createPane("splitApBoundary").style.zIndex = "350";
+    /* Above Leaflet overlayPane (~400) so invisible field quads do not sit on top of mandal hit targets */
+    mapBase.createPane("splitApBoundary").style.zIndex = "450";
+    /* Stay below splitApEdge (400) so green edges paint on top; clicks pass through edge (pointer-events none) to this pane */
     mapTop.createPane("splitApBoundary").style.zIndex = "350";
     var edgePaneTop = mapTop.createPane("splitApEdge");
     edgePaneTop.style.zIndex = "400";
@@ -1281,9 +1296,10 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
       mandals: { weight: 4, color: "#f5d0fe", fillOpacity: 0.1 }
     };
 
-    function wireSplitMandalEvents(geoJsonLayer, baseStyle, map) {
+    function wireSplitMandalEvents(geoJsonLayer, baseStyle, map, popupMap) {
       var H = window.__apSplitBoundaryHelpers;
       if (!H) return;
+      var openOnMap = popupMap || map;
       geoJsonLayer.eachLayer(function (layer) {
         var feat = layer.feature;
         var props = feat && feat.properties;
@@ -1294,17 +1310,16 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
           if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) layer.bringToFront();
         });
         layer.on("mouseout", function () { layer.setStyle(baseStyle); });
-        layer.bindPopup(function () {
-          return H.mandalPopupContent(feat.properties || {}, H.getFeatureName(feat.properties || {}));
-        }, { maxWidth: 340, minWidth: 260 });
         layer.on("click", function (e) {
           L.DomEvent.stopPropagation(e);
           var b = layer.getBounds && layer.getBounds();
           if (b && b.isValid()) {
-            map.fitBounds(b.pad(0.06), { maxZoom: 13, animate: true });
+            openOnMap.fitBounds(b.pad(0.06), { maxZoom: 13, animate: true });
             syncTopToBase();
           }
-          layer.openPopup(e.latlng);
+          /* Always attach to base map: popups on mapTop are clipped by .split-ap-swipe-mask overflow:hidden */
+          var html = H.mandalPopupContent(feat.properties || {}, H.getFeatureName(feat.properties || {}));
+          L.popup({ maxWidth: 340, minWidth: 260 }).setLatLng(e.latlng).setContent(html).openOn(openOnMap);
         });
       });
     }
@@ -1318,7 +1333,7 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
         if (!mandData) return;
         var st = ST.mandals;
         var gj = L.geoJSON(mandData, { style: function () { return st; }, smoothFactor: 1, pane: "splitApBoundary" });
-        if (H) wireSplitMandalEvents(gj, st, m);
+        if (H) wireSplitMandalEvents(gj, st, m, mapBase);
         gj.addTo(m);
         var bm = gj.getBounds();
         if (bm && bm.isValid()) splitApStateBounds = bm;
@@ -1563,6 +1578,7 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
         var idx = 0;
         /* Demo parcels are large quads in GeoJSON; drawing them on the right hid the Sobel edges—keep them off mapTop. */
         fieldsLayer = L.geoJSON(geojson, {
+          interactive: false,
           style: function () {
             return { color: "transparent", weight: 0, fillColor: "transparent", fillOpacity: 0, opacity: 0 };
           },
@@ -1602,30 +1618,95 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
         updateSwipeInnerWidth();
       });
 
-    /* ── Drag slider ── */
+    /* ── Drag slider (pointer capture keeps move/up off the map so Leaflet won’t steal / close popups) ── */
     var drag = false;
+    var splitDragPointerId = null;
+    var savedClosePopupOnClick = null;
     function setSplitFromClientX(clientX) {
       if (!root) return;
       var rect = root.getBoundingClientRect();
       var x = clientX - rect.left;
       applySplit((x / rect.width) * 100);
     }
+    function splitDragBegin() {
+      drag = true;
+      if (mapBase && mapBase.options) {
+        savedClosePopupOnClick = mapBase.options.closePopupOnClick;
+        mapBase.options.closePopupOnClick = false;
+      }
+    }
+    function splitDragEnd() {
+      drag = false;
+      splitDragPointerId = null;
+      if (mapBase && mapBase.options && savedClosePopupOnClick !== null) {
+        mapBase.options.closePopupOnClick = savedClosePopupOnClick;
+        savedClosePopupOnClick = null;
+      }
+    }
 
     if (slider) {
-      slider.addEventListener("mousedown", function (e) { drag = true; e.preventDefault(); });
+      slider.addEventListener("pointerdown", function (e) {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        splitDragBegin();
+        splitDragPointerId = e.pointerId;
+        try {
+          slider.setPointerCapture(e.pointerId);
+        } catch (err) {}
+        e.preventDefault();
+        if (typeof e.stopPropagation === "function") e.stopPropagation();
+        setSplitFromClientX(e.clientX);
+      });
+      slider.addEventListener("pointermove", function (e) {
+        if (!drag || splitDragPointerId !== e.pointerId) return;
+        e.preventDefault();
+        setSplitFromClientX(e.clientX);
+      });
+      slider.addEventListener("pointerup", function (e) {
+        if (splitDragPointerId !== e.pointerId) return;
+        try {
+          slider.releasePointerCapture(e.pointerId);
+        } catch (err) {}
+        splitDragEnd();
+      });
+      slider.addEventListener("pointercancel", function (e) {
+        if (splitDragPointerId !== e.pointerId) return;
+        try {
+          slider.releasePointerCapture(e.pointerId);
+        } catch (err) {}
+        splitDragEnd();
+      });
+      /* Fallback when Pointer Events are unavailable */
+      slider.addEventListener("mousedown", function (e) {
+        if (e.button !== 0) return;
+        if (typeof slider.setPointerCapture === "function") return;
+        splitDragBegin();
+        e.preventDefault();
+        if (typeof e.stopPropagation === "function") e.stopPropagation();
+      });
       slider.addEventListener("touchstart", function (e) {
-        drag = true;
+        if (typeof slider.setPointerCapture === "function") return;
+        splitDragBegin();
         if (e.touches.length) setSplitFromClientX(e.touches[0].clientX);
       }, { passive: true });
     }
     document.addEventListener("mousemove", function (e) {
-      if (drag && root) setSplitFromClientX(e.clientX);
+      if (!drag || splitDragPointerId != null || !root) return;
+      setSplitFromClientX(e.clientX);
     });
     document.addEventListener("touchmove", function (e) {
-      if (drag && e.touches.length) setSplitFromClientX(e.touches[0].clientX);
+      if (!drag || splitDragPointerId != null || !e.touches.length) return;
+      setSplitFromClientX(e.touches[0].clientX);
     }, { passive: true });
-    document.addEventListener("mouseup", function () { drag = false; });
-    document.addEventListener("touchend", function () { drag = false; });
+    document.addEventListener("mouseup", function () {
+      if (!drag) return;
+      if (splitDragPointerId != null) return;
+      splitDragEnd();
+    });
+    document.addEventListener("touchend", function () {
+      if (!drag) return;
+      if (splitDragPointerId != null) return;
+      splitDragEnd();
+    });
 
     setTimeout(updateSwipeInnerWidth, 100);
   }
