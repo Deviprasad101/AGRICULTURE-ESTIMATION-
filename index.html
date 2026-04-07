@@ -585,8 +585,14 @@
     }
     #view-split-ap .split-ap-toolbar strong { color: #4ade80; }
     #view-split-ap .split-ap-toolbar .split-ap-hint { color: #94a3b8; font-size: 12px; max-width: 640px; }
-    #view-split-ap .split-ap-btn {
+    #view-split-ap .split-ap-toolbar-actions {
       margin-left: auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    #view-split-ap .split-ap-btn {
       padding: 8px 14px;
       border-radius: 8px;
       border: 1px solid #475569;
@@ -597,6 +603,50 @@
       cursor: pointer;
     }
     #view-split-ap .split-ap-btn:hover { border-color: #4ade80; color: #4ade80; }
+    #view-split-ap .split-ap-search-bar {
+      flex: 1 1 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(51, 65, 85, 0.6);
+    }
+    #view-split-ap .split-ap-search-input {
+      flex: 1;
+      min-width: 160px;
+      max-width: 420px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    #view-split-ap .split-ap-search-input::placeholder { color: #64748b; }
+    #view-split-ap .split-ap-search-input:focus {
+      outline: none;
+      border-color: #4ade80;
+      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2);
+    }
+    #view-split-ap .split-ap-search-msg { font-size: 12px; color: #94a3b8; max-width: 100%; }
+    #view-split-ap .split-ap-search-msg.split-ap-search-err { color: #f87171; }
+    #view-split-ap .split-ap-search-msg.split-ap-search-ok { color: #4ade80; }
+    #view-split-ap svg path.leaflet-interactive {
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    #view-split-ap .split-ap-search-marker-wrap { background: transparent !important; border: none !important; }
+    #view-split-ap .split-ap-search-marker-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fbbf24;
+      border: 3px solid #0f172a;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+    }
     #view-split-ap .split-ap-maps {
       flex: 1;
       min-height: 220px;
@@ -635,7 +685,16 @@
       bottom: 0;
       pointer-events: none;
     }
-    #view-split-ap #map-split-ap-top.leaflet-container { pointer-events: none; }
+    /*
+      Leaflet sets pointer-events: auto on .leaflet-pane etc. Children override the
+      container’s none — drags on the right were panning only mapTop, so the left
+      (mapBase) stayed fixed. Force the whole top map subtree to ignore pointers so
+      pan/zoom/click always hit mapBase underneath (one interaction surface).
+    */
+    #view-split-ap #map-split-ap-top.leaflet-container,
+    #view-split-ap #map-split-ap-top.leaflet-container * {
+      pointer-events: none !important;
+    }
     /* Avoid visible tile seams / grid squares on raster + canvas tiles */
     #view-split-ap .leaflet-tile-container img.leaflet-tile,
     #view-split-ap .leaflet-tile-container canvas.leaflet-tile {
@@ -999,9 +1058,17 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
     <div class="split-ap-toolbar">
       <div>
         <strong>Chinagottigallu · Pellakuru Mandal · Tirupati district (Andhra Pradesh)</strong>
-        <div class="split-ap-hint"><strong>Drag the white line.</strong> <strong>Left</strong> = clean satellite imagery. <strong>Right of the line</strong> = edge detection only (green Sobel glow from satellite pixels)—demo field polygons are hidden here so they do not cover the edges. Click the map for field popups (invisible hit areas). Pan and zoom freely.</div>
+        <div class="split-ap-hint"><strong>Drag the white line.</strong> <strong>Search</strong> moves both maps (Nominatim). <strong>Mandal boundaries only</strong> on both sides (no state/district outlines); <strong>click a mandal</strong> for the crop-mix demo popup like the Boundaries tab. <strong>Left</strong> = satellite · <strong>Right</strong> = edge glow. Interact on the base map.</div>
       </div>
-      <button type="button" class="split-ap-btn" id="btnSplitApFit">Fit fields</button>
+      <div class="split-ap-toolbar-actions">
+        <button type="button" class="split-ap-btn" id="btnSplitApFit">Fit fields</button>
+        <button type="button" class="split-ap-btn" id="btnSplitApFitAp">Fit mandals</button>
+      </div>
+      <div class="split-ap-search-bar">
+        <input type="search" id="splitApSearchInput" class="split-ap-search-input" placeholder="Search place (e.g. Tirupati, Chinagottigallu)…" autocomplete="off" aria-label="Search place in Andhra Pradesh" />
+        <button type="button" class="split-ap-btn" id="btnSplitApSearch">Search</button>
+        <span class="split-ap-search-msg" id="splitApSearchMsg" aria-live="polite"></span>
+      </div>
     </div>
     <div class="split-ap-maps" id="splitApMapsRoot">
       <div id="map-split-ap-base" role="application" aria-label="Satellite with field boundaries"></div>
@@ -1091,6 +1158,9 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
     var mask = document.getElementById("splitApSwipeMask");
     var inner = document.getElementById("splitApSwipeInner");
     var slider = document.getElementById("splitApSlider");
+    var statusEl = document.getElementById("splitApStatus");
+    var splitSearchInput = document.getElementById("splitApSearchInput");
+    var splitSearchMsg = document.getElementById("splitApSearchMsg");
 
     /* ── Sobel edge-detection tile layer ── */
     var EdgeTileLayer = L.TileLayer.extend({
@@ -1154,40 +1224,163 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
 
     var defaultCenter = [13.612, 79.948];
     var defaultZoom = 14;
-    var mapBase = L.map("map-split-ap-base", { zoomControl: true, preferCanvas: false }).setView(defaultCenter, defaultZoom);
+    var mapBase = L.map("map-split-ap-base", {
+      zoomControl: true,
+      preferCanvas: false,
+      zoomSnap: 1,
+      zoomDelta: 1,
+      wheelPxPerZoomLevel: 120
+    }).setView(defaultCenter, defaultZoom);
     var mapTop = L.map("map-split-ap-top", {
       zoomControl: false,
       preferCanvas: false,
-      attributionControl: false
+      attributionControl: false,
+      zoomSnap: 1,
+      zoomDelta: 1,
+      wheelPxPerZoomLevel: 120
     }).setView(defaultCenter, defaultZoom);
     window.__mapSplitApBase = mapBase;
     window.__mapSplitApTop = mapTop;
 
+    mapBase.createPane("splitApBoundary").style.zIndex = "350";
+    mapTop.createPane("splitApBoundary").style.zIndex = "350";
+    var edgePaneTop = mapTop.createPane("splitApEdge");
+    edgePaneTop.style.zIndex = "400";
+
     L.tileLayer(satUrl, satOpts).addTo(mapBase);
     L.tileLayer(satUrl, satOpts).addTo(mapTop);
-    new EdgeTileLayer(satUrl, Object.assign({}, satOpts, { opacity: 0.7 })).addTo(mapTop);
 
-    /* ── Smooth pixel-perfect sync (use "move" for every frame) ── */
+    var edgeLayerAdded = false;
+    function ensureSplitEdgeLayer() {
+      if (edgeLayerAdded) return;
+      edgeLayerAdded = true;
+      new EdgeTileLayer(satUrl, Object.assign({}, satOpts, { opacity: 0.7, pane: "splitApEdge" })).addTo(mapTop);
+      syncTopToBase();
+      updateSwipeInnerWidth();
+    }
+
+    function splitFetchGeoJson(url) {
+      return fetch(url, { cache: "default" })
+        .then(function (res) {
+          if (!res.ok) throw new Error(String(res.status));
+          return res.json();
+        })
+        .catch(function (err) {
+          console.warn("Split view boundary GeoJSON:", url, err);
+          return null;
+        });
+    }
+
+    var splitApStateBounds = null;
+
+    /* Split view: high-contrast boundaries + less vertex smoothing = sharper “resolution” on screen */
+    var SPLIT_AP_STYLES = {
+      mandals: { color: "#f0abfc", weight: 2.5, opacity: 1, fill: true, fillColor: "#000000", fillOpacity: 0, lineCap: "round", lineJoin: "round" }
+    };
+    var SPLIT_AP_HIGHLIGHT = {
+      mandals: { weight: 4, color: "#f5d0fe", fillOpacity: 0.1 }
+    };
+
+    function wireSplitMandalEvents(geoJsonLayer, baseStyle, map) {
+      var H = window.__apSplitBoundaryHelpers;
+      if (!H) return;
+      geoJsonLayer.eachLayer(function (layer) {
+        var feat = layer.feature;
+        var props = feat && feat.properties;
+        var name = H.getFeatureName(props);
+        /* No tooltips in split view (same reason as state/district — swipe drag). Click still opens crop-mix popup. */
+        layer.on("mouseover", function () {
+          layer.setStyle(Object.assign({}, baseStyle, SPLIT_AP_HIGHLIGHT.mandals));
+          if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) layer.bringToFront();
+        });
+        layer.on("mouseout", function () { layer.setStyle(baseStyle); });
+        layer.bindPopup(function () {
+          return H.mandalPopupContent(feat.properties || {}, H.getFeatureName(feat.properties || {}));
+        }, { maxWidth: 340, minWidth: 260 });
+        layer.on("click", function (e) {
+          L.DomEvent.stopPropagation(e);
+          var b = layer.getBounds && layer.getBounds();
+          if (b && b.isValid()) {
+            map.fitBounds(b.pad(0.06), { maxZoom: 13, animate: true });
+            syncTopToBase();
+          }
+          layer.openPopup(e.latlng);
+        });
+      });
+    }
+
+    function addSplitBoundaryLayers(mandData) {
+      var H = window.__apSplitBoundaryHelpers;
+      var ST = SPLIT_AP_STYLES;
+      if (mandData && H && H.enrichApMandalCrops) H.enrichApMandalCrops(mandData);
+
+      function addMandals(m) {
+        if (!mandData) return;
+        var st = ST.mandals;
+        var gj = L.geoJSON(mandData, { style: function () { return st; }, smoothFactor: 1, pane: "splitApBoundary" });
+        if (H) wireSplitMandalEvents(gj, st, m);
+        gj.addTo(m);
+        var bm = gj.getBounds();
+        if (bm && bm.isValid()) splitApStateBounds = bm;
+      }
+
+      addMandals(mapBase);
+      addMandals(mapTop);
+    }
+
+    splitFetchGeoJson("ap_mandals.geojson")
+      .then(function (mandData) {
+        addSplitBoundaryLayers(mandData);
+        if (statusEl && !mandData) {
+          statusEl.textContent = "Mandal layer not loaded — serve ap_mandals.geojson over HTTP (same as the Boundaries tab).";
+        }
+      })
+      .finally(function () {
+        ensureSplitEdgeLayer();
+      });
+
+    /* ── Sync overlay map: rAF-throttle during pan/zoom + skip redundant setView (avoids spurious zoom jumps) ── */
     var syncLock = false;
+    var syncTopRaf = null;
     function syncTopToBase() {
       if (syncLock) return;
+      var c = mapBase.getCenter();
+      var z = mapBase.getZoom();
+      var tc = mapTop.getCenter();
+      var tz = mapTop.getZoom();
+      if (Math.abs(tc.lat - c.lat) < 1e-8 && Math.abs(tc.lng - c.lng) < 1e-8 && Math.abs(tz - z) < 0.0001) return;
       syncLock = true;
-      mapTop.setView(mapBase.getCenter(), mapBase.getZoom(), { animate: false, duration: 0 });
+      mapTop.setView(c, z, { animate: false });
       syncLock = false;
     }
-    mapBase.on("move", syncTopToBase);
-    mapBase.on("zoom", syncTopToBase);
+    function scheduleSyncTopToBase() {
+      if (syncTopRaf != null) return;
+      syncTopRaf = requestAnimationFrame(function () {
+        syncTopRaf = null;
+        syncTopToBase();
+      });
+    }
+    mapBase.on("move", scheduleSyncTopToBase);
+    mapBase.on("zoom", scheduleSyncTopToBase);
     mapBase.on("moveend", syncTopToBase);
     mapBase.on("zoomend", syncTopToBase);
 
+    var splitRootLastW = -1;
+    var splitRootLastH = -1;
     function updateSwipeInnerWidth() {
       if (!root || !inner) return;
       var w = root.offsetWidth;
+      var h = root.offsetHeight;
       inner.style.width = w + "px";
       var topEl = document.getElementById("map-split-ap-top");
       if (topEl) topEl.style.width = w + "px";
-      mapBase.invalidateSize({ pan: false });
-      mapTop.invalidateSize({ pan: false });
+      var sizeChanged = w !== splitRootLastW || h !== splitRootLastH;
+      splitRootLastW = w;
+      splitRootLastH = h;
+      if (sizeChanged) {
+        mapBase.invalidateSize({ pan: false });
+        mapTop.invalidateSize({ pan: false });
+      }
       syncTopToBase();
     }
 
@@ -1195,10 +1388,18 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
       updateSwipeInnerWidth();
     };
 
-    if (typeof ResizeObserver !== "undefined" && root) {
-      new ResizeObserver(function () { updateSwipeInnerWidth(); }).observe(root);
+    var splitResizeDebounce = null;
+    function debouncedSwipeResize() {
+      if (splitResizeDebounce) clearTimeout(splitResizeDebounce);
+      splitResizeDebounce = setTimeout(function () {
+        splitResizeDebounce = null;
+        updateSwipeInnerWidth();
+      }, 100);
     }
-    window.addEventListener("resize", updateSwipeInnerWidth);
+    if (typeof ResizeObserver !== "undefined" && root) {
+      new ResizeObserver(debouncedSwipeResize).observe(root);
+    }
+    window.addEventListener("resize", debouncedSwipeResize);
 
     var splitPct = 50;
     function applySplit(pct) {
@@ -1212,7 +1413,6 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
     applySplit(50);
 
     var fieldsLayer = null;
-    var statusEl = document.getElementById("splitApStatus");
 
     function splitCropColor(crop) {
       var pal = {
@@ -1238,6 +1438,121 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
     }
 
     document.getElementById("btnSplitApFit").addEventListener("click", fitBoth);
+    var btnFitAp = document.getElementById("btnSplitApFitAp");
+    if (btnFitAp) {
+      btnFitAp.addEventListener("click", function () {
+        if (splitApStateBounds && splitApStateBounds.isValid()) {
+          mapBase.fitBounds(splitApStateBounds.pad(0.06), { maxZoom: 10, animate: false });
+          syncTopToBase();
+        }
+        updateSwipeInnerWidth();
+      });
+    }
+
+    var splitSearchMarkers = { base: null, top: null };
+    var splitSearchIcon = L.divIcon({
+      className: "split-ap-search-marker-wrap",
+      html: "<div class=\"split-ap-search-marker-dot\" aria-hidden=\"true\"></div>",
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+
+    function setSplitSearchMessage(text, kind) {
+      if (!splitSearchMsg) return;
+      splitSearchMsg.textContent = text || "";
+      splitSearchMsg.classList.remove("split-ap-search-err", "split-ap-search-ok");
+      if (kind === "err") splitSearchMsg.classList.add("split-ap-search-err");
+      else if (kind === "ok") splitSearchMsg.classList.add("split-ap-search-ok");
+    }
+
+    function clearSplitSearchMarkers() {
+      if (splitSearchMarkers.base) {
+        mapBase.removeLayer(splitSearchMarkers.base);
+        splitSearchMarkers.base = null;
+      }
+      if (splitSearchMarkers.top) {
+        mapTop.removeLayer(splitSearchMarkers.top);
+        splitSearchMarkers.top = null;
+      }
+    }
+
+    function runSplitPlaceSearch() {
+      if (!splitSearchInput) return;
+      var raw = String(splitSearchInput.value || "").trim();
+      if (!raw) {
+        setSplitSearchMessage("Enter a place name.", "err");
+        return;
+      }
+      setSplitSearchMessage("Looking up…", "ok");
+      var params = new URLSearchParams({
+        q: raw + ", Andhra Pradesh, India",
+        format: "json",
+        limit: "5",
+        addressdetails: "1"
+      });
+      fetch("https://nominatim.openstreetmap.org/search?" + params.toString(), {
+        method: "GET",
+        headers: { Accept: "application/json", "Accept-Language": "en" },
+        mode: "cors"
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          if (!data || !data.length) {
+            setSplitSearchMessage("No results for \"" + raw.replace(/</g, "") + "\".", "err");
+            return;
+          }
+          var r0 = data[0];
+          var lat = parseFloat(r0.lat);
+          var lon = parseFloat(r0.lon);
+          if (isNaN(lat) || isNaN(lon)) {
+            setSplitSearchMessage("Invalid coordinates from search.", "err");
+            return;
+          }
+          var label = String(r0.display_name || raw);
+          if (label.length > 88) label = label.slice(0, 88) + "…";
+
+          clearSplitSearchMarkers();
+          var latlng = L.latLng(lat, lon);
+          splitSearchMarkers.base = L.marker(latlng, { icon: splitSearchIcon }).addTo(mapBase);
+          splitSearchMarkers.top = L.marker(latlng, { icon: splitSearchIcon }).addTo(mapTop);
+          var safe = label.replace(/</g, "&lt;");
+          var popHtml = "<div style=\"font:12px system-ui,sans-serif;max-width:260px\"><strong>" + safe + "</strong></div>";
+          splitSearchMarkers.base.bindPopup(popHtml);
+          splitSearchMarkers.top.bindPopup(popHtml);
+
+          if (r0.boundingbox && r0.boundingbox.length === 4) {
+            var south = parseFloat(r0.boundingbox[0]);
+            var north = parseFloat(r0.boundingbox[1]);
+            var west = parseFloat(r0.boundingbox[2]);
+            var east = parseFloat(r0.boundingbox[3]);
+            if (!isNaN(south) && !isNaN(north) && !isNaN(west) && !isNaN(east)) {
+              mapBase.fitBounds([[south, west], [north, east]], { padding: [28, 28], maxZoom: 15, animate: false });
+            } else {
+              mapBase.setView(latlng, 14, { animate: false });
+            }
+          } else {
+            mapBase.setView(latlng, 14, { animate: false });
+          }
+          syncTopToBase();
+          updateSwipeInnerWidth();
+          splitSearchMarkers.base.openPopup();
+          setSplitSearchMessage("Both maps: " + label, "ok");
+        })
+        .catch(function () {
+          setSplitSearchMessage("Search failed (network or Nominatim rate limit). Try again.", "err");
+        });
+    }
+
+    var btnSplitSearch = document.getElementById("btnSplitApSearch");
+    if (btnSplitSearch) btnSplitSearch.addEventListener("click", runSplitPlaceSearch);
+    if (splitSearchInput) {
+      splitSearchInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") runSplitPlaceSearch();
+      });
+    }
 
     fetch(FIELDS_URL, { cache: "default" })
       .then(function (res) {
@@ -1790,6 +2105,17 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
     document.getElementById("toggle-ap-crops").addEventListener("change", function () {
       syncApCropOverlays();
     });
+
+    window.__apSplitBoundaryHelpers = {
+      getFeatureName: getFeatureName,
+      popupContent: popupContent,
+      mandalPopupContent: mandalPopupContent,
+      enrichApMandalCrops: enrichApMandalCrops,
+      enrichApDistrictCrops: enrichApDistrictCrops,
+      STYLES: STYLES,
+      HIGHLIGHT: HIGHLIGHT,
+      GEOJSON_URLS: GEOJSON_URLS
+    };
 
     Promise.all([
       loadGeoJson(GEOJSON_URLS.state),
