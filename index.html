@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AP Agriculture — State boundaries & Chinagottigallu crop dashboard</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -378,7 +379,9 @@
       color: var(--accent);
       background: color-mix(in srgb, var(--accent) 10%, transparent);
     }
-    #view-tirupati #map-tirupati { flex: 1; min-height: 520px; }
+    #view-tirupati #map-tirupati { flex: 1; min-height: 520px; position: relative; }
+    #view-tirupati #map-tirupati .maplibregl-map { font-family: inherit; }
+    #view-tirupati #map-tirupati .maplibregl-ctrl-bottom-right { bottom: 52px; }
     /* Leaflet popups live under #view-tirupati; global * reset strips default margins — restore here */
     #view-tirupati .leaflet-popup-content-wrapper {
       border-radius: 10px;
@@ -599,6 +602,7 @@
         <div class="tp-map-hd">
           <div class="tp-map-head-main">
             <div class="tp-map-title">Crop Field Map — Chinagottigallu</div>
+            <p class="tp-map-sub" style="margin:4px 0 0;font-size:11px;color:var(--muted);line-height:1.4;max-width:52ch">MapLibre GL with a local <strong>PMTiles</strong> vector layer (same pattern as the <a href="https://ts.anymap.dev/examples/maplibre/pmtiles_layer.html" target="_blank" rel="noopener noreferrer">anymap PMTiles example</a>). Click a field polygon for crop attributes; regenerate tiles with <code style="font-size:10px">python scripts/build_chinagottigallu_pmtiles.py</code> after editing GeoJSON.</p>
             <div class="tp-map-tools tp-map-tools-search">
               <div class="tp-search-wrap">
                 <input type="search" id="tpFieldSearch" class="tp-search-input" placeholder="Field #, farmer, crop, or village name…" autocomplete="off" aria-label="Search fields or places" />
@@ -649,7 +653,7 @@
         window.__tirupatiInited = true;
       }
       setTimeout(function () {
-        if (window.__mapTirupati) window.__mapTirupati.invalidateSize();
+        if (window.__mapTirupati && typeof window.__mapTirupati.resize === "function") window.__mapTirupati.resize();
       }, 150);
     }
   }
@@ -1282,7 +1286,33 @@
       return { fields: FIELDS, villageBoundary: villageBoundary, villageCenter: VILLAGE_CENTER };
     }
 
-    function startDashboard(FIELDS, villageBoundary, villageCenter) {
+    function startDashboard(FIELDS, villageBoundary, villageCenter, rawFeatureCollection) {
+    function featureCollectionFromFields(flds) {
+      return {
+        type: "FeatureCollection",
+        features: flds.map(function (f) {
+          var ring = f.coords.map(function (c) { return [c[1], c[0]]; });
+          ring.push(ring[0]);
+          return {
+            type: "Feature",
+            geometry: { type: "Polygon", coordinates: [ring] },
+            properties: {
+              field_id: "F" + String(f.id).padStart(3, "0"),
+              crop: f.crop,
+              area_ac: f.area,
+              farmer: f.farmer,
+              season: f.season,
+              yield: f.yield_val,
+              survey: f.survey,
+              village: "Chinagottigallu",
+              mandal: "Pellakuru",
+              district: "Tirupati"
+            }
+          };
+        })
+      };
+    }
+    var geoJsonForFallback = rawFeatureCollection || featureCollectionFromFields(FIELDS);
     var cropArea = {};
     for (var fj = 0; fj < FIELDS.length; fj++) {
       var f0 = FIELDS[fj];
@@ -1296,59 +1326,389 @@
     var hc = document.getElementById("tpHeaderFieldCount");
     if (hc) hc.textContent = FIELDS.length + " fields";
 
-    var map = L.map("map-tirupati", { zoomControl: true, attributionControl: true, preferCanvas: true });
-    window.__mapTirupati = map;
-
-    var TPL = {
-      osm: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap", maxZoom: 19, tileSize: 256 }),
-      satellite: L.tileLayer(
-        "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        { attribution: "© Esri", maxZoom: 19, tileSize: 256 }
-      ),
-      terrain: L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", { attribution: "© OpenTopoMap", maxZoom: 17, tileSize: 256 })
-    };
-    TPL.osm.addTo(map);
-    var currentTpLayer = "osm";
-
-    function fitMapToAllFields(padding) {
-      var pts = [];
-      FIELDS.forEach(function (f) {
-        f.coords.forEach(function (c) { pts.push([c[0], c[1]]); });
-      });
-      if (pts.length) map.fitBounds(pts, { padding: padding || [30, 30] });
-    }
-
-    var tpBasemapBtns = document.querySelectorAll("#view-tirupati .tp-map-tool[data-tplayer]");
-    tpBasemapBtns.forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var name = btn.getAttribute("data-tplayer");
-        TPL[currentTpLayer].remove();
-        TPL[name].addTo(map);
-        currentTpLayer = name;
-        tpBasemapBtns.forEach(function (b) {
-          b.classList.toggle("tp-tool-active", b === btn);
-        });
-        requestAnimationFrame(function () {
-          map.invalidateSize(false);
-          requestAnimationFrame(function () { map.invalidateSize(false); });
-        });
-      });
-    });
-    document.getElementById("btnTpFit").addEventListener("click", function () { fitMapToAllFields([30, 30]); });
-
-    L.polygon(villageBoundary, { color: "#4ade80", weight: 2.5, dashArray: "8,6", fillColor: "#4ade80", fillOpacity: 0.04 })
-      .addTo(map).bindTooltip("Chinagottigallu Village Boundary", { permanent: false });
-    L.marker(villageCenter, {
-      icon: L.divIcon({
-        className: "",
-        html: "<div style=\"background:#0a1a0f;color:#4ade80;border:1px solid #4ade80;padding:3px 10px;border-radius:4px;font-family:monospace;font-size:10px;font-weight:700\">CHINAGOTTIGALLU</div>",
-        iconAnchor: [70, 10]
-      })
-    }).addTo(map);
-
-    var allPolygons = [];
     var activeFilter = "all";
     var searchMatchIds = null;
+    var mapFieldsReady = false;
+    var map = null;
+    var maplibregl = null;
+    var useVectorTiles = false;
+    var currentTpLayer = "osm";
+    var fieldPopup = null;
+
+    function fieldIdStr(nid) {
+      return "F" + String(nid).padStart(3, "0");
+    }
+
+    function haversineM(lat1, lng1, lat2, lng2) {
+      var R = 6371000;
+      var toRad = Math.PI / 180;
+      var dLat = (lat2 - lat1) * toRad;
+      var dLng = (lng2 - lng1) * toRad;
+      var a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function centroidLngLat(f) {
+      var c = f.coords;
+      var slat = 0;
+      var slng = 0;
+      var n = c.length;
+      for (var i = 0; i < n; i++) {
+        slat += c[i][0];
+        slng += c[i][1];
+      }
+      return [slng / n, slat / n];
+    }
+
+    function boundsFromField(f) {
+      var w = Infinity;
+      var s = Infinity;
+      var e = -Infinity;
+      var n = -Infinity;
+      f.coords.forEach(function (c) {
+        var lat = c[0];
+        var lng = c[1];
+        if (lng < w) w = lng;
+        if (lat < s) s = lat;
+        if (lng > e) e = lng;
+        if (lat > n) n = lat;
+      });
+      return [[w, s], [e, n]];
+    }
+
+    var cropColorExpr = [
+      "match",
+      ["get", "crop"],
+      "Paddy",
+      "#4ade80",
+      "Sugarcane",
+      "#fbbf24",
+      "Groundnut",
+      "#fb923c",
+      "Cotton",
+      "#e5e5e5",
+      "Mango",
+      "#f472b6",
+      "Vegetables",
+      "#60a5fa",
+      "Chilli",
+      "#f87171",
+      "Fallow",
+      "#9ca3af",
+      "#94a3b8"
+    ];
+
+    function fillOpacityExpr() {
+      var lit =
+        searchMatchIds && searchMatchIds.length
+          ? ["literal", searchMatchIds.map(fieldIdStr)]
+          : null;
+      if (lit) {
+        return [
+          "case",
+          ["in", ["get", "field_id"], lit],
+          0.78,
+          activeFilter === "all" ? 0.55 : ["case", ["==", ["get", "crop"], activeFilter], 0.55, 0.08]
+        ];
+      }
+      if (activeFilter === "all") return 0.55;
+      return ["case", ["==", ["get", "crop"], activeFilter], 0.55, 0.08];
+    }
+
+    function lineColorExpr() {
+      var lit =
+        searchMatchIds && searchMatchIds.length
+          ? ["literal", searchMatchIds.map(fieldIdStr)]
+          : null;
+      if (lit) {
+        return ["case", ["in", ["get", "field_id"], lit], "#fbbf24", cropColorExpr];
+      }
+      return cropColorExpr;
+    }
+
+    function lineWidthExpr() {
+      var lit =
+        searchMatchIds && searchMatchIds.length
+          ? ["literal", searchMatchIds.map(fieldIdStr)]
+          : null;
+      if (lit) {
+        return ["case", ["in", ["get", "field_id"], lit], 3, 1.2];
+      }
+      return 1.2;
+    }
+
+    function refreshFieldPaint() {
+      if (!map || !mapFieldsReady) return;
+      try {
+        map.setPaintProperty("fields-fill", "fill-color", cropColorExpr);
+        map.setPaintProperty("fields-fill", "fill-opacity", fillOpacityExpr());
+        map.setPaintProperty("fields-line", "line-color", lineColorExpr());
+        map.setPaintProperty("fields-line", "line-width", lineWidthExpr());
+      } catch (err) {
+        console.warn("refreshFieldPaint", err);
+      }
+    }
+
+    function fitMapToAllFields(padding) {
+      if (!map) return;
+      var w = Infinity;
+      var s = Infinity;
+      var e = -Infinity;
+      var n = -Infinity;
+      FIELDS.forEach(function (f) {
+        f.coords.forEach(function (c) {
+          var lat = c[0];
+          var lng = c[1];
+          if (lng < w) w = lng;
+          if (lat < s) s = lat;
+          if (lng > e) e = lng;
+          if (lat > n) n = lat;
+        });
+      });
+      if (w === Infinity) return;
+      var pad = typeof padding === "number" ? padding : (padding && padding[0]) || 30;
+      map.fitBounds(
+        [
+          [w, s],
+          [e, n]
+        ],
+        { padding: pad, duration: 500 }
+      );
+    }
+
+    function setTpBasemap(name) {
+      if (!map || !map.isStyleLoaded()) return;
+      var tiles = {
+        osm: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+        satellite: [
+          "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        ],
+        terrain: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"]
+      };
+      var src = map.getSource("basemap");
+      if (src && typeof src.setTiles === "function") src.setTiles(tiles[name] || tiles.osm);
+    }
+
+    function getFieldById(id) {
+      for (var i = 0; i < FIELDS.length; i++) {
+        if (FIELDS[i].id === id) return FIELDS[i];
+      }
+      return null;
+    }
+
+    function openFieldPopup(f, lngLat) {
+      if (!map || !maplibregl) return;
+      if (fieldPopup) {
+        fieldPopup.remove();
+        fieldPopup = null;
+      }
+      var col = cropColor(f.crop);
+      var html =
+        "<div class=\"field-popup\">" +
+        "<div class=\"popup-crop-badge\" style=\"background:" +
+        col +
+        "22;color:" +
+        col +
+        ";border:1px solid " +
+        col +
+        "\">" +
+        f.crop +
+        "</div>" +
+        "<div class=\"popup-title\">Field #" +
+        f.id +
+        " — " +
+        f.survey +
+        "</div>" +
+        "<div class=\"popup-grid\">" +
+        "<div class=\"popup-row\"><label>Farmer</label><value>" +
+        String(f.farmer).replace(/</g, "&lt;") +
+        "</value></div>" +
+        "<div class=\"popup-row\"><label>Area</label><value>" +
+        f.area +
+        " Ac</value></div>" +
+        "<div class=\"popup-row\"><label>Season</label><value>" +
+        String(f.season).replace(/</g, "&lt;") +
+        "</value></div>" +
+        "<div class=\"popup-row\"><label>Est. Yield</label><value>" +
+        String(f.yield_val).replace(/</g, "&lt;") +
+        "</value></div>" +
+        "</div></div>";
+      fieldPopup = new maplibregl.Popup({ maxWidth: "300px", closeButton: true })
+        .setLngLat(lngLat)
+        .setHTML(html)
+        .addTo(map);
+    }
+
+    Promise.all([
+      import("https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/+esm"),
+      import("https://cdn.jsdelivr.net/npm/pmtiles@3.0.6/+esm")
+    ])
+      .then(function (mods) {
+        maplibregl = mods[0].default;
+        var Protocol = mods[1].Protocol;
+        maplibregl.addProtocol("pmtiles", new Protocol().tile);
+        var pmtilesUrl = new URL("data/chinagottigallu_fields.pmtiles", window.location.href).href;
+        return fetch(pmtilesUrl, { method: "HEAD" })
+          .then(function (r) {
+            return r.ok;
+          })
+          .catch(function () {
+            return false;
+          })
+          .then(function (ok) {
+            return { ok: ok, pmtilesUrl: pmtilesUrl };
+          });
+      })
+      .then(function (ctx) {
+        useVectorTiles = ctx.ok;
+        map = new maplibregl.Map({
+          container: "map-tirupati",
+          style: {
+            version: 8,
+            sources: {
+              basemap: {
+                type: "raster",
+                tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+                tileSize: 256,
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              }
+            },
+            layers: [{ id: "bg", type: "raster", source: "basemap" }]
+          },
+          center: [villageCenter[1], villageCenter[0]],
+          zoom: 14
+        });
+        window.__mapTirupati = map;
+
+        var tpBasemapBtns = document.querySelectorAll("#view-tirupati .tp-map-tool[data-tplayer]");
+        tpBasemapBtns.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var name = btn.getAttribute("data-tplayer");
+            currentTpLayer = name;
+            setTpBasemap(name);
+            tpBasemapBtns.forEach(function (b) {
+              b.classList.toggle("tp-tool-active", b === btn);
+            });
+            requestAnimationFrame(function () {
+              map.resize();
+              requestAnimationFrame(function () {
+                map.resize();
+              });
+            });
+          });
+        });
+        document.getElementById("btnTpFit").addEventListener("click", function () {
+          fitMapToAllFields([30, 30]);
+        });
+
+        map.on("load", function () {
+          var ring = villageBoundary.map(function (c) {
+            return [c[1], c[0]];
+          });
+          ring.push(ring[0]);
+          map.addSource("village-outline", {
+            type: "geojson",
+            data: {
+              type: "Feature",
+              properties: { name: "Chinagottigallu Village Boundary" },
+              geometry: { type: "Polygon", coordinates: [ring] }
+            }
+          });
+          map.addLayer({
+            id: "village-fill",
+            type: "fill",
+            source: "village-outline",
+            paint: { "fill-color": "#4ade80", "fill-opacity": 0.04 }
+          });
+          map.addLayer({
+            id: "village-line",
+            type: "line",
+            source: "village-outline",
+            paint: {
+              "line-color": "#4ade80",
+              "line-dasharray": [2, 2],
+              "line-width": 2
+            }
+          });
+
+          var lbl = document.createElement("div");
+          lbl.style.cssText =
+            "background:#0a1a0f;color:#4ade80;border:1px solid #4ade80;padding:3px 10px;border-radius:4px;font-family:monospace;font-size:10px;font-weight:700";
+          lbl.textContent = "CHINAGOTTIGALLU";
+          new maplibregl.Marker({ element: lbl, anchor: "bottom" })
+            .setLngLat([villageCenter[1], villageCenter[0]])
+            .addTo(map);
+
+          if (useVectorTiles) {
+            map.addSource("fields", {
+              type: "vector",
+              url: "pmtiles://" + ctx.pmtilesUrl,
+              attribution: "Chinagottigallu fields (PMTiles / local)"
+            });
+          } else {
+            map.addSource("fields", { type: "geojson", data: geoJsonForFallback, generateId: false });
+          }
+
+          var sl = useVectorTiles ? { "source-layer": "fields" } : {};
+          map.addLayer(
+            Object.assign(
+              {
+                id: "fields-fill",
+                type: "fill",
+                source: "fields",
+                paint: {
+                  "fill-color": cropColorExpr,
+                  "fill-opacity": 0.55
+                }
+              },
+              sl
+            )
+          );
+          map.addLayer(
+            Object.assign(
+              {
+                id: "fields-line",
+                type: "line",
+                source: "fields",
+                paint: {
+                  "line-color": cropColorExpr,
+                  "line-width": 1.2,
+                  "line-opacity": 0.9
+                }
+              },
+              sl
+            )
+          );
+
+          mapFieldsReady = true;
+          refreshFieldPaint();
+
+          map.on("click", "fields-fill", function (e) {
+            var feat = e.features && e.features[0];
+            if (!feat) return;
+            var p = feat.properties || {};
+            var numId = parseInt(String(p.field_id || "").replace(/\D/g, ""), 10) || 0;
+            var frow = getFieldById(numId);
+            if (frow) {
+              highlightFieldItem(numId);
+              openFieldPopup(frow, e.lngLat);
+            }
+          });
+          map.on("mouseenter", "fields-fill", function () {
+            map.getCanvas().style.cursor = "pointer";
+          });
+          map.on("mouseleave", "fields-fill", function () {
+            map.getCanvas().style.cursor = "";
+          });
+
+          fitMapToAllFields([30, 30]);
+        });
+      })
+      .catch(function (err) {
+        console.warn("MapLibre / PMTiles init failed:", err);
+      });
 
     function setSearchMessage(text, kind) {
       var el = document.getElementById("tpSearchMsg");
@@ -1358,29 +1718,13 @@
       else if (kind === "ok") el.classList.add("tp-search-ok");
     }
 
-    function fieldPolygonStyle(f, visible, searchMatch) {
-      var col = cropColor(f.crop);
-      return {
-        color: searchMatch ? "#fbbf24" : col,
-        weight: searchMatch ? 3 : (visible ? 1.5 : 0.3),
-        fillColor: col,
-        fillOpacity: visible ? (searchMatch ? 0.75 : 0.55) : 0.08,
-        opacity: visible ? 1 : 0.2
-      };
-    }
-
     function syncPolygonStyles() {
-      allPolygons.forEach(function (entry) {
-        var f = entry.field;
-        var visible = activeFilter === "all" || f.crop === activeFilter;
-        var match = !!(searchMatchIds && searchMatchIds.indexOf(f.id) >= 0);
-        entry.layer.setStyle(fieldPolygonStyle(f, visible, match));
-      });
+      refreshFieldPaint();
     }
 
     function removeTpPlaceMarker() {
       if (window.__tpSearchMarker) {
-        map.removeLayer(window.__tpSearchMarker);
+        window.__tpSearchMarker.remove();
         window.__tpSearchMarker = null;
       }
     }
@@ -1390,13 +1734,6 @@
       removeTpPlaceMarker();
       setSearchMessage("");
       syncPolygonStyles();
-    }
-
-    function getPolygonEntryByFieldId(id) {
-      for (var i = 0; i < allPolygons.length; i++) {
-        if (allPolygons[i].field.id === id) return allPolygons[i];
-      }
-      return null;
     }
 
     function runFieldSearch() {
@@ -1422,18 +1759,35 @@
       removeTpPlaceMarker();
       searchMatchIds = matches.map(function (f) { return f.id; });
       syncPolygonStyles();
-      var latlngs = [];
-      matches.forEach(function (f) {
-        f.coords.forEach(function (c) { latlngs.push(L.latLng(c[0], c[1])); });
-      });
-      var b = L.latLngBounds(latlngs);
-      if (b.isValid()) {
-        map.fitBounds(b.pad(0.15), { padding: [50, 50], maxZoom: matches.length === 1 ? 17 : 16, animate: true });
+      if (map) {
+        var w = Infinity;
+        var s = Infinity;
+        var e = -Infinity;
+        var n = -Infinity;
+        matches.forEach(function (f) {
+          f.coords.forEach(function (c) {
+            var lat = c[0];
+            var lng = c[1];
+            if (lng < w) w = lng;
+            if (lat < s) s = lat;
+            if (lng > e) e = lng;
+            if (lat > n) n = lat;
+          });
+        });
+        if (w !== Infinity) {
+          map.fitBounds(
+            [
+              [w, s],
+              [e, n]
+            ],
+            { padding: 50, maxZoom: matches.length === 1 ? 17 : 16, duration: 500 }
+          );
+        }
       }
       if (matches.length === 1) {
         highlightFieldItem(matches[0].id);
-        var one = getPolygonEntryByFieldId(matches[0].id);
-        if (one) one.layer.openPopup();
+        var mf = matches[0];
+        if (map && maplibregl) openFieldPopup(mf, centroidLngLat(mf));
         setSearchMessage("1 field — zoomed and highlighted.", "ok");
       } else {
         setSearchMessage(matches.length + " fields match — map zoomed to area.", "ok");
@@ -1472,17 +1826,18 @@
             return;
           }
           removeTpPlaceMarker();
-          var pin = L.marker([lat, lon], {
-            icon: L.divIcon({
-              className: "",
-              html: "<div style=\"width:14px;height:14px;background:#fbbf24;border:2px solid #0a1a0f;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.4)\"></div>",
-              iconSize: [14, 14],
-              iconAnchor: [7, 7]
-            })
-          }).addTo(map);
+          if (!map || !maplibregl) return;
+          var dot = document.createElement("div");
+          dot.style.cssText =
+            "width:14px;height:14px;background:#fbbf24;border:2px solid #0a1a0f;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.4)";
+          var pin = new maplibregl.Marker({ element: dot }).setLngLat([lon, lat]).addTo(map);
           window.__tpSearchMarker = pin;
-          pin.bindPopup("<div style=\"font:12px DM Sans,sans-serif;max-width:220px\"><strong>Search</strong><br/>" +
-            String(r0.display_name || raw).replace(/</g, "&lt;") + "</div>");
+          var pp = new maplibregl.Popup({ offset: 10, maxWidth: "240px" }).setHTML(
+            "<div style=\"font:12px DM Sans,sans-serif\"><strong>Search</strong><br/>" +
+              String(r0.display_name || raw).replace(/</g, "&lt;") +
+              "</div>"
+          );
+          pin.setPopup(pp);
 
           if (r0.boundingbox && r0.boundingbox.length === 4) {
             var south = parseFloat(r0.boundingbox[0]);
@@ -1491,25 +1846,27 @@
             var east = parseFloat(r0.boundingbox[3]);
             if (!isNaN(south) && !isNaN(north) && !isNaN(west) && !isNaN(east)) {
               map.fitBounds(
-                L.latLngBounds(L.latLng(south, west), L.latLng(north, east)),
-                { padding: [48, 48], maxZoom: 15, animate: true }
+                [
+                  [west, south],
+                  [east, north]
+                ],
+                { padding: 48, maxZoom: 15, duration: 600 }
               );
             } else {
-              map.flyTo([lat, lon], 14, { animate: true });
+              map.flyTo({ center: [lon, lat], zoom: 14, essential: true });
             }
           } else {
-            map.flyTo([lat, lon], 14, { animate: true });
+            map.flyTo({ center: [lon, lat], zoom: 14, essential: true });
           }
 
-          pin.openPopup();
+          pin.togglePopup();
 
-          var target = L.latLng(lat, lon);
           var nearIds = [];
           FIELDS.forEach(function (f) {
             var c = f.coords;
             var mlat = (c[0][0] + c[2][0]) / 2;
             var mlng = (c[0][1] + c[2][1]) / 2;
-            if (map.distance(L.latLng(mlat, mlng), target) <= 3500) nearIds.push(f.id);
+            if (haversineM(mlat, mlng, lat, lon) <= 3500) nearIds.push(f.id);
           });
           var placeLabel = String(r0.display_name || raw);
           var shortPlace = placeLabel.length > 72 ? placeLabel.slice(0, 72) + "…" : placeLabel;
@@ -1531,56 +1888,14 @@
         });
     }
 
-    function buildPopup(f) {
-      var col = cropColor(f.crop);
-      return "<div class=\"field-popup\">" +
-        "<div class=\"popup-crop-badge\" style=\"background:" + col + "22;color:" + col + ";border:1px solid " + col + "\">" + f.crop + "</div>" +
-        "<div class=\"popup-title\">Field #" + f.id + " — " + f.survey + "</div>" +
-        "<div class=\"popup-grid\">" +
-        "<div class=\"popup-row\"><label>Farmer</label><value>" + f.farmer + "</value></div>" +
-        "<div class=\"popup-row\"><label>Area</label><value>" + f.area + " Ac</value></div>" +
-        "<div class=\"popup-row\"><label>Season</label><value>" + f.season + "</value></div>" +
-        "<div class=\"popup-row\"><label>Est. Yield</label><value>" + f.yield_val + "</value></div>" +
-        "</div></div>";
-    }
-
     function highlightFieldItem(id) {
       document.querySelectorAll("#view-tirupati .tp-field-item").forEach(function (el) { el.classList.remove("tp-fi-active"); });
       var el = document.getElementById("fi-" + id);
       if (el) { el.classList.add("tp-fi-active"); el.scrollIntoView({ block: "nearest" }); }
     }
 
-    function drawPolygons(filter) {
-      allPolygons.forEach(function (p) { map.removeLayer(p.layer); });
-      allPolygons = [];
-      FIELDS.forEach(function (f) {
-        var visible = filter === "all" || f.crop === filter;
-        var col = cropColor(f.crop);
-        var latlngs = f.coords.map(function (c) { return [c[0], c[1]]; });
-        var poly = L.polygon(latlngs, {
-          color: col,
-          weight: visible ? 1.5 : 0.3,
-          fillColor: col,
-          fillOpacity: visible ? 0.55 : 0.08,
-          opacity: visible ? 1 : 0.2
-        });
-        var entry = { layer: poly, field: f, visible: visible };
-        poly.bindPopup(buildPopup(f), { maxWidth: 280 });
-        poly.on("mouseover", function () {
-          if (visible) this.setStyle({ fillOpacity: 0.8, weight: 2.5 });
-        });
-        poly.on("mouseout", function () {
-          var match = !!(searchMatchIds && searchMatchIds.indexOf(f.id) >= 0);
-          entry.layer.setStyle(fieldPolygonStyle(f, visible, match));
-        });
-        poly.on("click", function (e) {
-          L.DomEvent.stopPropagation(e);
-          highlightFieldItem(f.id);
-        });
-        poly.addTo(map);
-        allPolygons.push(entry);
-      });
-      syncPolygonStyles();
+    function drawPolygons() {
+      refreshFieldPaint();
     }
 
     function updateStats(filter) {
@@ -1633,16 +1948,15 @@
 
     function focusField(id) {
       highlightFieldItem(id);
-      var e = getPolygonEntryByFieldId(id);
-      if (!e) return;
-      var b = e.layer.getBounds();
-      if (b && b.isValid()) map.fitBounds(b, { padding: [60, 60], maxZoom: 17, animate: true });
-      e.layer.openPopup();
+      var f = getFieldById(id);
+      if (!f || !map) return;
+      map.fitBounds(boundsFromField(f), { padding: 60, maxZoom: 17, duration: 600 });
+      openFieldPopup(f, centroidLngLat(f));
     }
 
     function applyFilter(crop) {
       activeFilter = crop;
-      drawPolygons(crop);
+      drawPolygons();
       updateFieldList(crop);
       updateStats(crop);
       document.querySelectorAll("#view-tirupati .tp-filter-btn").forEach(function (btn) {
@@ -1695,15 +2009,14 @@
         CROP_ORDER.map(function (cr) {
           return "<div class=\"tp-legend-item\"><div class=\"tp-legend-dot\" style=\"background:" + cropColor(cr) + "\"></div>" + cr + "</div>";
         }).join("") +
+        "<div class=\"tp-legend-item\" style=\"margin-left:auto;color:#6b9e78;font-size:10px;font-family:monospace\">Fields: PMTiles vector (local) or GeoJSON fallback</div>" +
         "<div class=\"tp-legend-item\" style=\"margin-left:auto;color:#6b9e78;font-size:10px;font-family:monospace\">Village boundary (approx.)</div>";
     }
 
-    drawPolygons("all");
     updateFieldList("all");
     renderCropBars();
     renderLegend();
     updateStats("all");
-    fitMapToAllFields([30, 30]);
 
     setTimeout(function () {
       document.querySelectorAll("#view-tirupati .tp-bar-fill").forEach(function (el) {
@@ -1731,12 +2044,12 @@
         var arr = fieldsFromFeatureCollection(fc);
         if (!arr.length) throw new Error("no features");
         var vb = villageBlobFromFields(arr);
-        startDashboard(arr, vb.boundary, vb.center);
+        startDashboard(arr, vb.boundary, vb.center, fc);
       })
       .catch(function (err) {
         console.warn("Chinagottigallu GeoJSON not used:", err && err.message ? err.message : err);
         var syn = makeSyntheticDataset();
-        startDashboard(syn.fields, syn.villageBoundary, syn.villageCenter);
+        startDashboard(syn.fields, syn.villageBoundary, syn.villageCenter, null);
       });
   }
 })();
