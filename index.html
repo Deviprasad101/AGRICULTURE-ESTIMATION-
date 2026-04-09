@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AP Agriculture — Maps, crops, GeoAI & split satellite/fields view</title>
+  <title>AP Agriculture — Maps, crops & split satellite/fields view</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
@@ -478,91 +478,6 @@
       #view-tirupati .tp-meta { display: none; }
     }
 
-    /* ═══ VIEW: GeoAI field boundaries (doc / pipeline) ═══ */
-    #view-geoai {
-      min-height: calc(100vh - 49px);
-      background: #f1f5f9;
-      color: #0f172a;
-      font-family: "DM Sans", system-ui, sans-serif;
-      line-height: 1.55;
-    }
-    #view-geoai .geoai-inner {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 28px 20px 48px;
-    }
-    #view-geoai h1 {
-      font-size: 1.35rem;
-      font-weight: 700;
-      margin: 0 0 8px;
-      color: #0f172a;
-    }
-    #view-geoai .geoai-lead {
-      font-size: 14px;
-      color: #475569;
-      margin: 0 0 20px;
-    }
-    #view-geoai h2 {
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #64748b;
-      margin: 28px 0 10px;
-      font-weight: 700;
-    }
-    #view-geoai h3 { font-size: 15px; margin: 18px 0 8px; color: #1e293b; }
-    #view-geoai p, #view-geoai li { font-size: 14px; color: #334155; margin: 8px 0; }
-    #view-geoai ul { padding-left: 1.25rem; }
-    #view-geoai .geoai-note {
-      background: #fffbeb;
-      border: 1px solid #fcd34d;
-      border-radius: 8px;
-      padding: 12px 14px;
-      font-size: 13px;
-      color: #78350f;
-      margin: 16px 0;
-    }
-    #view-geoai .geoai-code {
-      background: #0f172a;
-      color: #e2e8f0;
-      border-radius: 8px;
-      padding: 14px 16px;
-      overflow-x: auto;
-      font-family: "Space Mono", ui-monospace, monospace;
-      font-size: 12px;
-      line-height: 1.45;
-      margin: 12px 0;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    #view-geoai table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      margin: 12px 0;
-      background: #fff;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-    #view-geoai th, #view-geoai td {
-      border: 1px solid #e2e8f0;
-      padding: 8px 10px;
-      text-align: left;
-    }
-    #view-geoai th { background: #f8fafc; font-weight: 600; color: #475569; }
-    #view-geoai a { color: #2563eb; }
-    #view-geoai .geoai-badge {
-      display: inline-block;
-      background: #dbeafe;
-      color: #1e40af;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 999px;
-      margin-bottom: 12px;
-    }
-
     /* ═══ Split compare: satellite vs fields (Chinagottigallu, AP) ═══ */
     #view-split-ap {
       display: flex;
@@ -766,7 +681,6 @@
   <nav class="app-tabs" role="tablist" aria-label="Application views">
     <button type="button" class="active" role="tab" aria-selected="true" data-view="ap" id="tab-ap">Andhra Pradesh — boundaries</button>
     <button type="button" role="tab" aria-selected="false" data-view="tirupati" id="tab-tirupati">Chinagottigallu — crop dashboard</button>
-    <button type="button" role="tab" aria-selected="false" data-view="geoai" id="tab-geoai">AP — field boundaries (GeoAI)</button>
     <button type="button" role="tab" aria-selected="false" data-view="splitap" id="tab-split-ap">Split: satellite ⟷ fields</button>
   </nav>
 
@@ -910,156 +824,6 @@
     </div>
   </div>
 
-  <!-- ═══ GeoAI / FTW field boundary pipeline (Andhra Pradesh focus) ═══ -->
-  <div id="view-geoai" class="view" role="tabpanel" aria-labelledby="tab-geoai" hidden>
-    <div class="geoai-inner">
-      <span class="geoai-badge">Python + geoai-py · Fields of The World (FTW)</span>
-      <h1>Field boundary detection with instance segmentation (Andhra Pradesh)</h1>
-      <p class="geoai-lead">
-        This page documents the same end-to-end workflow as the Mask&nbsp;R-CNN + FTW tutorial: Sentinel-2 chips (RGB+NIR, 10&nbsp;m),
-        instance masks, training, inference, cleaning, and vector polygons. Training and inference run in a Python environment
-        (not in the browser). For India-related work—including areas in <strong>Andhra Pradesh</strong>—use the FTW
-        <strong>India</strong> subset; then clip or filter predicted vectors to your AP AOI using district or mandal boundaries.
-      </p>
-
-      <div class="geoai-note">
-        <strong>Note (FTW India):</strong> The FTW benchmark includes an India country pack. Some documentation describes
-        India (and a few other countries) as using <em>presence-only</em> or simplified labelling in parts of the benchmark.
-        Check the latest FTW / TorchGeo notes for label semantics. For a small reproducible tutorial, you can still run the
-        Luxembourg subset first, then repeat the same commands with <code>country="india"</code>.
-      </div>
-
-      <h2>Why this matters</h2>
-      <p>
-        Accurate field boundary delineation supports precision agriculture, crop monitoring, subsidy verification, and land-use planning.
-        Instance segmentation assigns a <em>separate</em> mask ID per field parcel, which is stronger than a single “all fields” mask.
-      </p>
-
-      <h2>1. Install</h2>
-      <div class="geoai-code"># pip install geoai-py
-# Use a virtual environment (recommended)
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
-pip install geoai-py geopandas</div>
-
-      <h2>2. Download FTW data (India for AP-focused work)</h2>
-      <p>
-        FTW provides 256×256 chips with four Sentinel-2 bands (R, G, B, NIR) and instance masks; many regions include two temporal windows
-        (<code>window_a</code> / <code>window_b</code>) to exploit seasonal contrast.
-      </p>
-      <div class="geoai-code">import geoai
-
-geoai.download_ftw(countries=["india"], output_dir="ftw_data")
-
-# Smallest tutorial subset (optional first run):
-# geoai.download_ftw(countries=["luxembourg"], output_dir="ftw_data")</div>
-
-      <h2>3. Explore chips (GeoParquet)</h2>
-      <div class="geoai-code">import os
-from pathlib import Path
-import geopandas as gpd
-
-country = "india"  # or "luxembourg"
-country_dir = os.path.join("ftw_data", country)
-chips_gdf = gpd.read_parquet(os.path.join(country_dir, "chips_india.parquet"))  # or chips_luxembourg.parquet
-print(len(chips_gdf), chips_gdf["split"].value_counts())
-
-# Optional: filter chips intersecting an Andhra Pradesh bbox or your AOI shapefile
-# aoi = gpd.read_file("your_ap_aoi.geojson")
-# chips_gdf = chips_gdf[chips_gdf.geometry.intersects(aoi.union_all())]</div>
-
-      <h2>4. Prepare training tiles</h2>
-      <div class="geoai-code">data = geoai.prepare_ftw("ftw_data", country="india")
-data</div>
-
-      <h2>5. Train Mask R-CNN (instance segmentation)</h2>
-      <p>
-        <code>num_classes=2</code> → background vs field.
-        <code>num_channels=4</code> → Sentinel-2 R,G,B,NIR.
-        <code>instance_labels=True</code> → use FTW instance IDs in masks.
-      </p>
-      <div class="geoai-code">geoai.train_instance_segmentation_model(
-    images_dir=data["images_dir"],
-    labels_dir=data["labels_dir"],
-    output_dir="field_boundaries/models",
-    num_classes=2,
-    num_channels=4,
-    batch_size=4,
-    num_epochs=20,
-    learning_rate=0.005,
-    val_split=0.2,
-    instance_labels=True,
-    visualize=True,
-    verbose=True,
-)</div>
-
-      <h2>6. Inference on a test chip</h2>
-      <div class="geoai-code">from pathlib import Path
-
-test_images = sorted(Path(data["test_dir"]).glob("*.tif"))
-test_image_path = str(test_images[0])
-masks_path = "field_boundary_prediction.tif"
-model_path = "field_boundaries/models/best_model.pth"
-
-result = geoai.instance_segmentation(
-    input_path=test_image_path,
-    output_path=masks_path,
-    model_path=model_path,
-    num_classes=2,
-    num_channels=4,
-    window_size=256,
-    overlap=128,
-    confidence_threshold=0.5,
-    batch_size=4,
-    vectorize=True,
-    class_names=["background", "field"],
-)</div>
-
-      <h2>7. Clean instance mask → vector → properties</h2>
-      <div class="geoai-code">cleaned_masks_path = "field_boundary_prediction_cleaned.tif"
-geoai.clean_instance_mask(
-    result["instance"], cleaned_masks_path, min_area=100, max_hole_area=100
-)
-
-output_vector_path = "field_boundary_prediction.geojson"
-gdf = geoai.raster_to_vector(cleaned_masks_path, output_vector_path)
-gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")</div>
-
-      <h2>Geometric properties (from GeoAI)</h2>
-      <table>
-        <thead><tr><th>Property</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td>Area</td><td>Field size (e.g. ha) — yield and subsidy context</td></tr>
-          <tr><td>Perimeter</td><td>Boundary length (e.g. fencing)</td></tr>
-          <tr><td>Elongation</td><td>Major/minor axis ratio — strip vs compact parcels</td></tr>
-          <tr><td>Solidity</td><td>Area / convex hull area — boundary irregularity</td></tr>
-          <tr><td>Extent</td><td>Area / bounding-box area — rectangularity</td></tr>
-        </tbody>
-      </table>
-
-      <h2>Andhra Pradesh: how to connect outputs to this app</h2>
-      <ol style="padding-left:1.25rem;margin:12px 0">
-        <li>Train or fine-tune on FTW India chips; run inference on your own Sentinel-2 mosaics clipped to AP if needed.</li>
-        <li>Export polygons as GeoJSON (or GeoPackage) in WGS84.</li>
-        <li>Optional: clip polygons to mandal/district boundaries from your existing <code>geojson_ap.geojson</code> / <code>ap_mandals.geojson</code>.</li>
-        <li>Replace or merge with <code>data/chinagottigallu_fields.geojson</code> or serve a new layer in the map views.</li>
-      </ol>
-
-      <h2>Repository script</h2>
-      <p>
-        A runnable template script is in <code>scripts/ap_field_boundaries_ftw_geoai.py</code> (download → prepare → optional train/inference).
-        Run it from the project root after installing <code>geoai-py</code>. GPU is recommended for training.
-      </p>
-
-      <h2>References</h2>
-      <ul>
-        <li>Fields of The World (dataset &amp; paper): <a href="https://fieldsofthe.world/" target="_blank" rel="noopener noreferrer">fieldsofthe.world</a></li>
-        <li>GeoAI FTW helpers: <a href="https://opengeoai.org/ftw/" target="_blank" rel="noopener noreferrer">opengeoai.org/ftw</a></li>
-      </ul>
-    </div>
-  </div>
-
   <!-- ═══ Split swipe: one AP sample (Chinagottigallu fields on satellite) ═══ -->
   <div id="view-split-ap" class="view" role="tabpanel" aria-labelledby="tab-split-ap" hidden>
     <div class="split-ap-toolbar">
@@ -1101,33 +865,26 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
 
   var tabAp = document.getElementById("tab-ap");
   var tabTp = document.getElementById("tab-tirupati");
-  var tabGeoai = document.getElementById("tab-geoai");
   var tabSplitAp = document.getElementById("tab-split-ap");
   var viewAp = document.getElementById("view-ap");
   var viewTp = document.getElementById("view-tirupati");
-  var viewGeoai = document.getElementById("view-geoai");
   var viewSplitAp = document.getElementById("view-split-ap");
 
   function showView(which) {
     var isAp = which === "ap";
     var isTp = which === "tirupati";
-    var isGeoai = which === "geoai";
     var isSplit = which === "splitap";
     tabAp.classList.toggle("active", isAp);
     tabTp.classList.toggle("active", isTp);
-    tabGeoai.classList.toggle("active", isGeoai);
     tabSplitAp.classList.toggle("active", isSplit);
     tabAp.setAttribute("aria-selected", isAp ? "true" : "false");
     tabTp.setAttribute("aria-selected", isTp ? "true" : "false");
-    tabGeoai.setAttribute("aria-selected", isGeoai ? "true" : "false");
     tabSplitAp.setAttribute("aria-selected", isSplit ? "true" : "false");
     viewAp.classList.toggle("active", isAp);
     viewTp.classList.toggle("active", isTp);
-    viewGeoai.classList.toggle("active", isGeoai);
     viewSplitAp.classList.toggle("active", isSplit);
     viewAp.hidden = !isAp;
     viewTp.hidden = !isTp;
-    viewGeoai.hidden = !isGeoai;
     viewSplitAp.hidden = !isSplit;
     if (isAp && window.__mapAp) {
       setTimeout(function () { window.__mapAp.invalidateSize(); }, 150);
@@ -1156,7 +913,6 @@ gdf_props = geoai.add_geometric_properties(gdf, area_unit="ha", length_unit="m")
 
   tabAp.addEventListener("click", function () { showView("ap"); });
   tabTp.addEventListener("click", function () { showView("tirupati"); });
-  tabGeoai.addEventListener("click", function () { showView("geoai"); });
   tabSplitAp.addEventListener("click", function () { showView("splitap"); });
 
   function initSplitApCompare() {
