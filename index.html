@@ -479,7 +479,12 @@
     }
 
     /* ═══ Split compare: satellite vs fields (Chinagottigallu, AP) ═══ */
-    #view-split-ap {
+    /*
+      Important: do not set display:flex on bare #view-split-ap — that beats .view { display:none }
+      and can leave the split toolbar/maps visible on AP / Tirupati tabs if [hidden] is out of sync.
+      Only the active tab uses flex layout.
+    */
+    #view-split-ap.view.active {
       display: flex;
       flex-direction: column;
       height: calc(100vh - 49px);
