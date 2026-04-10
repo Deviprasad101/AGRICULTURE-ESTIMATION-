@@ -613,6 +613,157 @@
     #view-split-ap #map-split-ap-top.leaflet-container .leaflet-splitApEdge-pane * {
       pointer-events: none !important;
     }
+    /* Mandal popups on the right map must sit above Sobel edge tiles (pane z-index 400) */
+    #view-split-ap #map-split-ap-top .leaflet-popup-pane {
+      z-index: 900 !important;
+    }
+    /* Split mandal popups: card shell + dark premium body */
+    #view-split-ap .split-ap-mandal-popup-shell .leaflet-popup-content-wrapper {
+      padding: 0;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0f172a;
+      box-shadow:
+        0 22px 55px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(148, 163, 184, 0.22);
+    }
+    #view-split-ap .split-ap-mandal-popup-shell .leaflet-popup-content {
+      margin: 0;
+      min-width: 288px;
+      max-width: min(380px, 92vw);
+    }
+    #view-split-ap .split-ap-mandal-popup-shell a.leaflet-popup-close-button {
+      display: none;
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-popup-split-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 55%, #0c1222 100%);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-popup-split-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: 0.02em;
+      line-height: 1.25;
+      flex: 1;
+      min-width: 0;
+    }
+    #view-split-ap .ap-mandal-popup--split .split-ap-popup-close {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(30, 41, 59, 0.85);
+      color: #cbd5e1;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    #view-split-ap .ap-mandal-popup--split .split-ap-popup-close:hover {
+      color: #fecaca;
+      border-color: rgba(248, 113, 113, 0.65);
+      background: rgba(248, 113, 113, 0.12);
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-popup-split-body {
+      padding: 14px 16px 16px;
+      color: #cbd5e1;
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-stat-pill {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-stat-pill span {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-stat-pill strong {
+      display: block;
+      margin-top: 2px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #4ade80;
+      font-variant-numeric: tabular-nums;
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-stat-card {
+      background: rgba(30, 41, 59, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 10px;
+      padding: 10px 12px;
+      flex: 1;
+      min-width: 120px;
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-yield-note {
+      font-size: 12px;
+      line-height: 1.45;
+      color: #94a3b8;
+      margin: 0 0 12px;
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-crops-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin: 0 0 8px;
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-crop-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-crop-table tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.45);
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-crop-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+      vertical-align: middle;
+      color: #e2e8f0;
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-crop-table td:last-child {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      color: #cbd5e1;
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-crop-table tr:last-child td {
+      border-bottom: none;
+    }
+    #view-split-ap .ap-mandal-popup--split .ap-mandal-split-footer {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(148, 163, 184, 0.2);
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.35;
+    }
+    #view-split-ap .split-ap-mandal-popup-shell .leaflet-popup-tip-container {
+      margin-top: -1px;
+    }
+    #view-split-ap .split-ap-mandal-popup-shell .leaflet-popup-tip {
+      background: #0f172a;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow: none;
+    }
     /* Avoid visible tile seams / grid squares on raster + canvas tiles */
     #view-split-ap .leaflet-tile-container img.leaflet-tile,
     #view-split-ap .leaflet-tile-container canvas.leaflet-tile {
@@ -1120,10 +1271,9 @@
       mandals: { weight: 4, color: "#f5d0fe", fillOpacity: 0.1 }
     };
 
-    function wireSplitMandalEvents(geoJsonLayer, baseStyle, map, popupMap) {
+    function wireSplitMandalEvents(geoJsonLayer, baseStyle, map) {
       var H = window.__apSplitBoundaryHelpers;
       if (!H) return;
-      var openOnMap = popupMap || map;
       geoJsonLayer.eachLayer(function (layer) {
         var feat = layer.feature;
         var props = feat && feat.properties;
@@ -1136,14 +1286,55 @@
         layer.on("mouseout", function () { layer.setStyle(baseStyle); });
         layer.on("click", function (e) {
           L.DomEvent.stopPropagation(e);
+          /* Only one mandal popup at a time across both maps */
+          mapBase.closePopup();
+          mapTop.closePopup();
           var b = layer.getBounds && layer.getBounds();
           if (b && b.isValid()) {
-            openOnMap.fitBounds(b.pad(0.06), { maxZoom: 13, animate: true });
-            syncTopToBase();
+            /* Fit the map that was clicked; move/zoom listeners sync the other map */
+            map.fitBounds(b.pad(0.06), { maxZoom: 13, animate: true });
           }
-          /* Always attach to base map: popups on mapTop are clipped by .split-ap-swipe-mask overflow:hidden */
-          var html = H.mandalPopupContent(feat.properties || {}, H.getFeatureName(feat.properties || {}));
-          L.popup({ maxWidth: 340, minWidth: 260 }).setLatLng(e.latlng).setContent(html).openOn(openOnMap);
+          /*
+            Popups must open on the same map as the layer. mapBase sits under the swipe mask
+            (lower z-index than .split-ap-swipe-mask), so opening on mapBase hides the popup
+            on the right-hand strip — use map (base or top) so it paints above that side.
+          */
+          var html = H.mandalPopupContent(feat.properties || {}, H.getFeatureName(feat.properties || {}), {
+            splitPremium: true
+          });
+          /* Block mousedown/click from reaching the map (and mapBase under the mask) — avoids drag + stray map clicks */
+          if (typeof L.DomEvent.disableClickPropagation === "function") {
+            L.DomEvent.disableClickPropagation(html);
+          }
+          var closeBtn = html.querySelector(".split-ap-popup-close");
+          if (closeBtn) {
+            function stopForMap(ev) {
+              L.DomEvent.stop(ev);
+            }
+            /* Capture phase: Leaflet starts drag on mousedown before our click bubbles */
+            ["mousedown", "pointerdown", "touchstart", "dblclick"].forEach(function (type) {
+              closeBtn.addEventListener(type, stopForMap, true);
+            });
+            closeBtn.addEventListener("click", function (ev) {
+              L.DomEvent.stop(ev);
+              map.closePopup();
+            });
+          }
+          var splitMandalPopup = L.popup({
+            maxWidth: 400,
+            minWidth: 288,
+            className: "split-ap-mandal-popup-shell",
+            closeButton: false,
+            autoPan: true,
+            autoPanPadding: [20, 20]
+          })
+            .setLatLng(e.latlng)
+            .setContent(html)
+            .openOn(map);
+          var popupEl = splitMandalPopup.getElement && splitMandalPopup.getElement();
+          if (popupEl && typeof L.DomEvent.disableClickPropagation === "function") {
+            L.DomEvent.disableClickPropagation(popupEl);
+          }
         });
       });
     }
@@ -1157,7 +1348,7 @@
         if (!mandData) return;
         var st = ST.mandals;
         var gj = L.geoJSON(mandData, { style: function () { return st; }, smoothFactor: 1, pane: "splitApBoundary" });
-        if (H) wireSplitMandalEvents(gj, st, m, mapBase);
+        if (H) wireSplitMandalEvents(gj, st, m);
         gj.addTo(m);
         var bm = gj.getBounds();
         if (bm && bm.isValid()) splitApStateBounds = bm;
@@ -1746,54 +1937,121 @@
       });
     }
 
-    function mandalPopupContent(properties, displayName) {
-      var wrap = document.createElement("div");
-      wrap.className = "ap-mandal-popup";
+    function mandalPopupContent(properties, displayName, options) {
+      options = options || {};
+      var splitPremium = !!options.splitPremium;
+
+      var total = properties._demo_mandal_total_ha;
+      var totalStr = (total != null ? Number(total) : 0).toLocaleString() + " ha";
+
+      function buildCropTable() {
+        var table = document.createElement("table");
+        table.className = "ap-mandal-crop-table";
+        (properties._demo_mandal_breakdown || []).forEach(function (row) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          var sw = document.createElement("span");
+          sw.className = "ap-mandal-swatch";
+          sw.style.background = AP_CROP_COLORS[row.crop] || "#94a3b8";
+          sw.title = row.crop;
+          td0.appendChild(sw);
+          tr.appendChild(td0);
+          var td1 = document.createElement("td");
+          td1.textContent = row.crop;
+          tr.appendChild(td1);
+          var td2 = document.createElement("td");
+          td2.textContent = row.ha.toLocaleString() + " ha (" + row.pct + "%)";
+          tr.appendChild(td2);
+          table.appendChild(tr);
+        });
+        return table;
+      }
+
+      if (splitPremium) {
+        var wrap = document.createElement("div");
+        wrap.className = "ap-mandal-popup ap-mandal-popup--split";
+
+        var head = document.createElement("header");
+        head.className = "ap-mandal-popup-split-head";
+        var titleEl = document.createElement("div");
+        titleEl.className = "ap-mandal-popup-split-title";
+        titleEl.textContent = displayName;
+        head.appendChild(titleEl);
+        var closeBtn = document.createElement("button");
+        closeBtn.type = "button";
+        closeBtn.className = "split-ap-popup-close";
+        closeBtn.setAttribute("aria-label", "Close popup");
+        closeBtn.innerHTML = "\u00d7";
+        head.appendChild(closeBtn);
+        wrap.appendChild(head);
+
+        var body = document.createElement("div");
+        body.className = "ap-mandal-popup-split-body";
+
+        var pills = document.createElement("div");
+        pills.className = "ap-mandal-stat-pill";
+        var cardA = document.createElement("div");
+        cardA.className = "ap-mandal-stat-card";
+        cardA.innerHTML = "<span>Total crop area (demo)</span><strong>" + totalStr + "</strong>";
+        var cardB = document.createElement("div");
+        cardB.className = "ap-mandal-stat-card";
+        cardB.innerHTML =
+          "<span>Composite yield (demo)</span><strong>~" +
+          String(properties._demo_yield_note) +
+          " t/ha</strong>";
+        pills.appendChild(cardA);
+        pills.appendChild(cardB);
+        body.appendChild(pills);
+
+        var yieldNote = document.createElement("p");
+        yieldNote.className = "ap-mandal-yield-note";
+        yieldNote.textContent =
+          "Area-weighted mix of crops listed below. Map colour reflects the dominant crop.";
+        body.appendChild(yieldNote);
+
+        var cropsLabel = document.createElement("p");
+        cropsLabel.className = "ap-mandal-crops-label";
+        cropsLabel.textContent = "Crops by area";
+        body.appendChild(cropsLabel);
+        body.appendChild(buildCropTable());
+
+        var foot = document.createElement("div");
+        foot.className = "ap-mandal-split-footer";
+        foot.textContent = "Synthetic demo data — not official crop statistics.";
+        body.appendChild(foot);
+
+        wrap.appendChild(body);
+        return wrap;
+      }
+
+      var wrapPlain = document.createElement("div");
+      wrapPlain.className = "ap-mandal-popup";
       var h = document.createElement("h3");
       h.textContent = displayName;
-      wrap.appendChild(h);
-      var total = properties._demo_mandal_total_ha;
+      wrapPlain.appendChild(h);
       var p1 = document.createElement("p");
       p1.appendChild(document.createTextNode("Total crop area (demo): "));
       var s1 = document.createElement("strong");
-      s1.textContent = (total != null ? Number(total) : 0).toLocaleString() + " ha";
+      s1.textContent = totalStr;
       p1.appendChild(s1);
-      wrap.appendChild(p1);
+      wrapPlain.appendChild(p1);
       var py = document.createElement("p");
-      py.textContent = "Composite yield estimate (demo): ~" + String(properties._demo_yield_note) + " t/ha (area-weighted mix of crops below).";
-      wrap.appendChild(py);
+      py.textContent =
+        "Composite yield estimate (demo): ~" + String(properties._demo_yield_note) + " t/ha (area-weighted mix of crops below).";
+      wrapPlain.appendChild(py);
       var sec = document.createElement("p");
       sec.style.fontWeight = "600";
       sec.style.fontSize = "11px";
       sec.style.marginTop = "10px";
       sec.textContent = "Crops by area (map colour = dominant crop)";
-      wrap.appendChild(sec);
-      var table = document.createElement("table");
-      table.className = "ap-mandal-crop-table";
-      (properties._demo_mandal_breakdown || []).forEach(function (row) {
-        var tr = document.createElement("tr");
-        var td0 = document.createElement("td");
-        var sw = document.createElement("span");
-        sw.className = "ap-mandal-swatch";
-        sw.style.background = AP_CROP_COLORS[row.crop] || "#94a3b8";
-        sw.title = row.crop;
-        td0.appendChild(sw);
-        tr.appendChild(td0);
-        var td1 = document.createElement("td");
-        td1.textContent = row.crop;
-        tr.appendChild(td1);
-        var td2 = document.createElement("td");
-        td2.textContent = row.ha.toLocaleString() + " ha (" + row.pct + "%)";
-        tr.appendChild(td2);
-        table.appendChild(tr);
-      });
-      wrap.appendChild(table);
+      wrapPlain.appendChild(sec);
+      wrapPlain.appendChild(buildCropTable());
       var hint = document.createElement("p");
       hint.className = "panel-hint";
       hint.style.marginTop = "10px";
       hint.textContent = "Synthetic demo — not official crop statistics.";
-      wrap.appendChild(hint);
-      return wrap;
+      wrapPlain.appendChild(hint);
+      return wrapPlain;
     }
 
     var apBaseOsm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
