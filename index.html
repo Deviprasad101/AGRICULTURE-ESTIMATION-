@@ -632,15 +632,43 @@
       min-width: 288px;
       max-width: min(380px, 92vw);
     }
+    /* Leaflet close control (enabled for split view) — above content, always clickable */
     #view-split-ap .split-ap-mandal-popup-shell a.leaflet-popup-close-button {
-      display: none;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      top: 10px !important;
+      right: 10px !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.45) !important;
+      background: rgba(30, 41, 59, 0.95) !important;
+      color: #e2e8f0 !important;
+      font-size: 22px !important;
+      font-weight: 700;
+      line-height: 1 !important;
+      text-decoration: none !important;
+      opacity: 1 !important;
+      z-index: 1000 !important;
+      pointer-events: auto !important;
+      cursor: pointer !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    #view-split-ap .split-ap-mandal-popup-shell a.leaflet-popup-close-button:hover {
+      color: #fecaca !important;
+      border-color: rgba(248, 113, 113, 0.7) !important;
+      background: rgba(248, 113, 113, 0.15) !important;
     }
     #view-split-ap .ap-mandal-popup--split .ap-mandal-popup-split-head {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 12px;
-      padding: 14px 16px;
+      padding: 14px 48px 14px 16px;
       background: linear-gradient(135deg, #1e293b 0%, #0f172a 55%, #0c1222 100%);
       border-bottom: 1px solid rgba(148, 163, 184, 0.28);
     }
@@ -652,28 +680,6 @@
       line-height: 1.25;
       flex: 1;
       min-width: 0;
-    }
-    #view-split-ap .ap-mandal-popup--split .split-ap-popup-close {
-      flex-shrink: 0;
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      background: rgba(30, 41, 59, 0.85);
-      color: #cbd5e1;
-      font-size: 24px;
-      line-height: 1;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-    }
-    #view-split-ap .ap-mandal-popup--split .split-ap-popup-close:hover {
-      color: #fecaca;
-      border-color: rgba(248, 113, 113, 0.65);
-      background: rgba(248, 113, 113, 0.12);
     }
     #view-split-ap .ap-mandal-popup--split .ap-mandal-popup-split-body {
       padding: 14px 16px 16px;
@@ -1229,6 +1235,36 @@
     window.__mapSplitApBase = mapBase;
     window.__mapSplitApTop = mapTop;
 
+    function closeSplitApBothPopups() {
+      mapBase.closePopup();
+      mapTop.closePopup();
+    }
+    /*
+      Do not close both maps on every map click — that fights Leaflet’s drag-vs-click logic and can drop popups while panning.
+      Each map keeps closePopupOnClick (default) for its own layer; we only dismiss the *other* map’s popup on background click.
+    */
+    var splitApSliderDragging = false;
+    mapBase.on("click", function () {
+      if (splitApSliderDragging) return;
+      mapTop.closePopup();
+    });
+    mapTop.on("click", function () {
+      if (splitApSliderDragging) return;
+      mapBase.closePopup();
+    });
+
+    /* Do not close popups from slider pointerdown — cursor often crosses the handle while panning the base map. */
+    var viewSplitApEl = document.getElementById("view-split-ap");
+    if (viewSplitApEl) {
+      viewSplitApEl.addEventListener(
+        "click",
+        function (ev) {
+          if (ev.target.closest(".split-ap-toolbar button")) closeSplitApBothPopups();
+        },
+        true
+      );
+    }
+
     /* Above Leaflet overlayPane (~400) so invisible field quads do not sit on top of mandal hit targets */
     mapBase.createPane("splitApBoundary").style.zIndex = "450";
     /* Stay below splitApEdge (400) so green edges paint on top; clicks pass through edge (pointer-events none) to this pane */
@@ -1306,25 +1342,11 @@
           if (typeof L.DomEvent.disableClickPropagation === "function") {
             L.DomEvent.disableClickPropagation(html);
           }
-          var closeBtn = html.querySelector(".split-ap-popup-close");
-          if (closeBtn) {
-            function stopForMap(ev) {
-              L.DomEvent.stop(ev);
-            }
-            /* Capture phase: Leaflet starts drag on mousedown before our click bubbles */
-            ["mousedown", "pointerdown", "touchstart", "dblclick"].forEach(function (type) {
-              closeBtn.addEventListener(type, stopForMap, true);
-            });
-            closeBtn.addEventListener("click", function (ev) {
-              L.DomEvent.stop(ev);
-              map.closePopup();
-            });
-          }
           var splitMandalPopup = L.popup({
             maxWidth: 400,
             minWidth: 288,
             className: "split-ap-mandal-popup-shell",
-            closeButton: false,
+            closeButton: true,
             autoPan: true,
             autoPanPadding: [20, 20]
           })
@@ -1334,6 +1356,10 @@
           var popupEl = splitMandalPopup.getElement && splitMandalPopup.getElement();
           if (popupEl && typeof L.DomEvent.disableClickPropagation === "function") {
             L.DomEvent.disableClickPropagation(popupEl);
+            /* Leaflet omits "click" — without this, bubbled clicks hit the map and fight the close button */
+            if (typeof L.DomEvent.on === "function") {
+              L.DomEvent.on(popupEl, "click", L.DomEvent.stopPropagation);
+            }
           }
         });
       });
@@ -1573,6 +1599,8 @@
           splitSearchMarkers.top = L.marker(latlng, { icon: splitSearchIcon }).addTo(mapTop);
           var safe = label.replace(/</g, "&lt;");
           var popHtml = "<div style=\"font:12px system-ui,sans-serif;max-width:260px\"><strong>" + safe + "</strong></div>";
+          splitSearchMarkers.base.on("click", closeSplitApBothPopups);
+          splitSearchMarkers.top.on("click", closeSplitApBothPopups);
           splitSearchMarkers.base.bindPopup(popHtml);
           splitSearchMarkers.top.bindPopup(popHtml);
 
@@ -1663,7 +1691,8 @@
     /* ── Drag slider (pointer capture keeps move/up off the map so Leaflet won’t steal / close popups) ── */
     var drag = false;
     var splitDragPointerId = null;
-    var savedClosePopupOnClick = null;
+    var savedClosePopupBase = null;
+    var savedClosePopupTop = null;
     function setSplitFromClientX(clientX) {
       if (!root) return;
       var rect = root.getBoundingClientRect();
@@ -1672,18 +1701,34 @@
     }
     function splitDragBegin() {
       drag = true;
+      splitApSliderDragging = true;
       if (mapBase && mapBase.options) {
-        savedClosePopupOnClick = mapBase.options.closePopupOnClick;
+        savedClosePopupBase = mapBase.options.closePopupOnClick;
         mapBase.options.closePopupOnClick = false;
+      }
+      if (mapTop && mapTop.options) {
+        savedClosePopupTop = mapTop.options.closePopupOnClick;
+        mapTop.options.closePopupOnClick = false;
       }
     }
     function splitDragEnd() {
       drag = false;
       splitDragPointerId = null;
-      if (mapBase && mapBase.options && savedClosePopupOnClick !== null) {
-        mapBase.options.closePopupOnClick = savedClosePopupOnClick;
-        savedClosePopupOnClick = null;
-      }
+      /*
+        Leaflet closes popups on preclick when closePopupOnClick is true. preclick/click run after this handler
+        returns — restore options on the next task so the release gesture does not dismiss the popup.
+      */
+      setTimeout(function () {
+        if (mapBase && mapBase.options && savedClosePopupBase !== null) {
+          mapBase.options.closePopupOnClick = savedClosePopupBase;
+          savedClosePopupBase = null;
+        }
+        if (mapTop && mapTop.options && savedClosePopupTop !== null) {
+          mapTop.options.closePopupOnClick = savedClosePopupTop;
+          savedClosePopupTop = null;
+        }
+        splitApSliderDragging = false;
+      }, 0);
     }
 
     if (slider) {
@@ -1977,12 +2022,6 @@
         titleEl.className = "ap-mandal-popup-split-title";
         titleEl.textContent = displayName;
         head.appendChild(titleEl);
-        var closeBtn = document.createElement("button");
-        closeBtn.type = "button";
-        closeBtn.className = "split-ap-popup-close";
-        closeBtn.setAttribute("aria-label", "Close popup");
-        closeBtn.innerHTML = "\u00d7";
-        head.appendChild(closeBtn);
         wrap.appendChild(head);
 
         var body = document.createElement("div");
