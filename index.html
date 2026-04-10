@@ -834,7 +834,7 @@
     <div class="split-ap-toolbar">
       <div>
         <strong>Chinagottigallu · Pellakuru Mandal · Tirupati district (Andhra Pradesh)</strong>
-        <div class="split-ap-hint"><strong>Drag the white line.</strong> <strong>Search</strong> moves both maps (Nominatim). <strong>Mandal boundaries only</strong> on both sides (no state/district outlines); <strong>click a mandal</strong> for the crop-mix demo popup like the Boundaries tab. <strong>Left</strong> = satellite · <strong>Right</strong> = edge glow. Interact on the base map.</div>
+        <div class="split-ap-hint"><strong>Drag the white line.</strong> <strong>Search</strong> moves both maps (Nominatim). <strong>Mandal boundaries only</strong> on both sides (no state/district outlines); <strong>click a mandal</strong> for the crop-mix demo popup like the Boundaries tab. <strong>Left</strong> = satellite · <strong>Right</strong> = satellite with <strong>edge glow only inside agricultural field polygons</strong> (from the village GeoJSON). Interact on the base map.</div>
       </div>
       <div class="split-ap-toolbar-actions">
         <button type="button" class="split-ap-btn" id="btnSplitApFit">Fit fields</button>
@@ -850,12 +850,12 @@
       <div id="map-split-ap-base" role="application" aria-label="Satellite with field boundaries"></div>
       <div class="split-ap-swipe-mask" id="splitApSwipeMask">
         <div class="split-ap-swipe-inner" id="splitApSwipeInner">
-          <div id="map-split-ap-top" role="application" aria-label="Satellite and edge detection overlay"></div>
+          <div id="map-split-ap-top" role="application" aria-label="Satellite with field-masked edge detection"></div>
         </div>
       </div>
       <span class="split-ap-label split-ap-label-base">Satellite</span>
-      <span class="split-ap-label split-ap-label-fields">Edge detection</span>
-      <div class="split-ap-slider" id="splitApSlider" role="slider" aria-orientation="vertical" aria-valuemin="8" aria-valuemax="92" aria-valuenow="50" aria-label="Drag to show basemap on the left, field detection on the right" title="Drag to compare">
+      <span class="split-ap-label split-ap-label-fields">Field edges</span>
+      <div class="split-ap-slider" id="splitApSlider" role="slider" aria-orientation="vertical" aria-valuemin="8" aria-valuemax="92" aria-valuenow="50" aria-label="Drag to show basemap on the left, field-masked edge glow on the right" title="Drag to compare">
         <span class="split-ap-slider-line" aria-hidden="true"></span>
         <span class="split-ap-slider-knob" aria-hidden="true"></span>
       </div>
@@ -930,7 +930,68 @@
     var splitSearchInput = document.getElementById("splitApSearchInput");
     var splitSearchMsg = document.getElementById("splitApSearchMsg");
 
-    /* ── Sobel edge-detection tile layer ── */
+    /* GeoJSON [lng,lat] rings — filled on field load; Sobel output is masked to these polygons only */
+    var splitApFieldRings = [];
+    var splitApEdgeLayerInstance = null;
+
+    function collectFieldRingsFromGeoJSON(geojson) {
+      var rings = [];
+      var feats = (geojson && geojson.features) || [];
+      for (var i = 0; i < feats.length; i++) {
+        var g = feats[i].geometry;
+        if (!g || !g.coordinates) continue;
+        if (g.type === "Polygon") {
+          var outer = g.coordinates[0];
+          if (outer && outer.length >= 3) rings.push(outer);
+        } else if (g.type === "MultiPolygon") {
+          for (var j = 0; j < g.coordinates.length; j++) {
+            var poly = g.coordinates[j];
+            if (poly && poly[0] && poly[0].length >= 3) rings.push(poly[0]);
+          }
+        }
+      }
+      return rings;
+    }
+
+    function latLngToTileOffset(map, latlng, coords, tileSize) {
+      var z = coords.z;
+      var p = map.project(latlng, z);
+      var nw = typeof coords.scaleBy === "function" ? coords.scaleBy(tileSize) : L.point(coords.x * tileSize.x, coords.y * tileSize.y);
+      return p.subtract(nw);
+    }
+
+    /* Build 1-bit-ish mask: white inside field polygons in tile pixel space (for canvas composite) */
+    function buildFieldMaskImageData(map, coords, tileSize, rings) {
+      var w = tileSize.x;
+      var h = tileSize.y;
+      var maskCanvas = document.createElement("canvas");
+      maskCanvas.width = w;
+      maskCanvas.height = h;
+      var mctx = maskCanvas.getContext("2d");
+      if (!mctx || !rings || !rings.length) {
+        return null;
+      }
+      mctx.clearRect(0, 0, w, h);
+      mctx.fillStyle = "rgba(255,255,255,1)";
+      for (var r = 0; r < rings.length; r++) {
+        var ring = rings[r];
+        if (!ring || ring.length < 3) continue;
+        mctx.beginPath();
+        for (var v = 0; v < ring.length; v++) {
+          var c = ring[v];
+          if (!c || c.length < 2) continue;
+          var ll = L.latLng(c[1], c[0]);
+          var pt = latLngToTileOffset(map, ll, coords, tileSize);
+          if (v === 0) mctx.moveTo(pt.x, pt.y);
+          else mctx.lineTo(pt.x, pt.y);
+        }
+        mctx.closePath();
+        mctx.fill();
+      }
+      return mctx.getImageData(0, 0, w, h);
+    }
+
+    /* ── Sobel edge-detection tile layer (edges only where field mask is on) ── */
     var EdgeTileLayer = L.TileLayer.extend({
       createTile: function (coords, done) {
         var tile = document.createElement("canvas");
@@ -940,6 +1001,8 @@
         var ctx = tile.getContext("2d", { willReadFrequently: true });
         var img = new Image();
         img.crossOrigin = "anonymous";
+        var map = this._map;
+        var rings = splitApFieldRings;
         img.onload = function () {
           ctx.drawImage(img, 0, 0, size.x, size.y);
           try {
@@ -949,6 +1012,8 @@
             var od = out.data;
             var w = size.x;
             var h = size.y;
+            var mask = map && rings && rings.length ? buildFieldMaskImageData(map, coords, size, rings) : null;
+            var md = mask && mask.data;
             function lum(ix, iy) {
               var cx = ix < 0 ? 0 : ix >= w ? w - 1 : ix;
               var cy = iy < 0 ? 0 : iy >= h ? h - 1 : iy;
@@ -969,10 +1034,16 @@
                 var gy = -l00 - 2 * l01 - l02 + l20 + 2 * l21 + l22;
                 var mag = Math.min(255, Math.sqrt(gx * gx + gy * gy) * 1.6);
                 var p = (y * w + x) * 4;
+                var m = 0;
+                if (md) {
+                  m = md[p] + md[p + 1] + md[p + 2];
+                  m = m > 380 ? 1 : m / 765;
+                }
+                var e = Math.round(mag * m);
                 od[p] = 0;
-                od[p + 1] = Math.round(mag * 0.92);
+                od[p + 1] = Math.round(e * 0.92);
                 od[p + 2] = 0;
-                od[p + 3] = Math.round(mag);
+                od[p + 3] = e;
               }
             }
             ctx.putImageData(out, 0, 0);
@@ -1030,7 +1101,8 @@
     function ensureSplitEdgeLayer() {
       if (edgeLayerAdded) return;
       edgeLayerAdded = true;
-      new EdgeTileLayer(satUrl, Object.assign({}, satOpts, { opacity: 0.7, pane: "splitApEdge" })).addTo(mapTop);
+      splitApEdgeLayerInstance = new EdgeTileLayer(satUrl, Object.assign({}, satOpts, { opacity: 0.7, pane: "splitApEdge" }));
+      splitApEdgeLayerInstance.addTo(mapTop);
       syncTopToBase();
       updateSwipeInnerWidth();
     }
@@ -1336,6 +1408,10 @@
         return res.json();
       })
       .then(function (geojson) {
+        splitApFieldRings = collectFieldRingsFromGeoJSON(geojson);
+        if (splitApEdgeLayerInstance && typeof splitApEdgeLayerInstance.redraw === "function") {
+          splitApEdgeLayerInstance.redraw();
+        }
         var idx = 0;
         /* Demo parcels are large quads in GeoJSON; drawing them on the right hid the Sobel edges—keep them off mapTop. */
         fieldsLayer = L.geoJSON(geojson, {
