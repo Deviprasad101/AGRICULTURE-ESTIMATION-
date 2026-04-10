@@ -605,22 +605,13 @@
       bottom: 0;
     }
     /*
-      Top map sits above the base (z-index). If every pane has pointer-events: none,
-      hits fall through to mapBase — but mandals on base use pane z-index 350 while
-      GeoJSON fields use overlay ~400, so invisible fields can steal clicks on the right.
-      Instead: disable dragging on mapTop (JS) and only the mandal pane receives events;
-      Sobel edge + tiles stay non-interactive. Popups open on mapBase so they are not
-      clipped by .split-ap-swipe-mask { overflow: hidden }.
+      Right-hand map must receive drags/zoom so panning works on that side. Sobel edge
+      canvas sits above tiles — keep that pane non-interactive so gestures hit the map.
+      Popups for mandals still open on mapBase (JS) so they are not clipped by the mask.
     */
-    #view-split-ap #map-split-ap-top.leaflet-container {
+    #view-split-ap #map-split-ap-top.leaflet-container .leaflet-splitApEdge-pane,
+    #view-split-ap #map-split-ap-top.leaflet-container .leaflet-splitApEdge-pane * {
       pointer-events: none !important;
-    }
-    #view-split-ap #map-split-ap-top.leaflet-container .leaflet-pane {
-      pointer-events: none !important;
-    }
-    #view-split-ap #map-split-ap-top.leaflet-container .leaflet-splitApBoundary-pane,
-    #view-split-ap #map-split-ap-top.leaflet-container .leaflet-splitApBoundary-pane * {
-      pointer-events: auto !important;
     }
     /* Avoid visible tile seams / grid squares on raster + canvas tiles */
     #view-split-ap .leaflet-tile-container img.leaflet-tile,
@@ -1078,12 +1069,12 @@
       zoomDelta: 1,
       wheelPxPerZoomLevel: 120
     }).setView(defaultCenter, defaultZoom);
-    mapTop.dragging.disable();
-    mapTop.scrollWheelZoom.disable();
-    mapTop.doubleClickZoom.disable();
+    /* Right pane is pannable/zoomable; stays in sync with base via bidirectional sync */
+    mapTop.dragging.enable();
+    mapTop.scrollWheelZoom.enable();
+    mapTop.doubleClickZoom.enable();
     mapTop.boxZoom.disable();
     mapTop.keyboard.disable();
-    if (mapTop.tap && mapTop.tap.disable) mapTop.tap.disable();
     window.__mapSplitApBase = mapBase;
     window.__mapSplitApTop = mapTop;
 
@@ -1187,19 +1178,31 @@
         ensureSplitEdgeLayer();
       });
 
-    /* ── Sync overlay map: rAF-throttle during pan/zoom + skip redundant setView (avoids spurious zoom jumps) ── */
-    var syncLock = false;
+    /* ── Keep both maps aligned: base ↔ top (re-entrancy guard avoids feedback loops) ── */
+    var splitMapSyncing = false;
     var syncTopRaf = null;
+    var syncBaseRaf = null;
     function syncTopToBase() {
-      if (syncLock) return;
+      if (splitMapSyncing) return;
       var c = mapBase.getCenter();
       var z = mapBase.getZoom();
       var tc = mapTop.getCenter();
       var tz = mapTop.getZoom();
       if (Math.abs(tc.lat - c.lat) < 1e-8 && Math.abs(tc.lng - c.lng) < 1e-8 && Math.abs(tz - z) < 0.0001) return;
-      syncLock = true;
+      splitMapSyncing = true;
       mapTop.setView(c, z, { animate: false });
-      syncLock = false;
+      splitMapSyncing = false;
+    }
+    function syncBaseToTop() {
+      if (splitMapSyncing) return;
+      var c = mapTop.getCenter();
+      var z = mapTop.getZoom();
+      var bc = mapBase.getCenter();
+      var bz = mapBase.getZoom();
+      if (Math.abs(bc.lat - c.lat) < 1e-8 && Math.abs(bc.lng - c.lng) < 1e-8 && Math.abs(bz - z) < 0.0001) return;
+      splitMapSyncing = true;
+      mapBase.setView(c, z, { animate: false });
+      splitMapSyncing = false;
     }
     function scheduleSyncTopToBase() {
       if (syncTopRaf != null) return;
@@ -1208,10 +1211,21 @@
         syncTopToBase();
       });
     }
+    function scheduleSyncBaseToTop() {
+      if (syncBaseRaf != null) return;
+      syncBaseRaf = requestAnimationFrame(function () {
+        syncBaseRaf = null;
+        syncBaseToTop();
+      });
+    }
     mapBase.on("move", scheduleSyncTopToBase);
     mapBase.on("zoom", scheduleSyncTopToBase);
     mapBase.on("moveend", syncTopToBase);
     mapBase.on("zoomend", syncTopToBase);
+    mapTop.on("move", scheduleSyncBaseToTop);
+    mapTop.on("zoom", scheduleSyncBaseToTop);
+    mapTop.on("moveend", syncBaseToTop);
+    mapTop.on("zoomend", syncBaseToTop);
 
     var splitRootLastW = -1;
     var splitRootLastH = -1;
