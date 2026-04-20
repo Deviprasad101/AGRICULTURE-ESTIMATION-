@@ -1166,8 +1166,11 @@
 
   function initSavedSatelliteViewer() {
     var GEOJSON_FILE = encodeURI("saved_field_groups (2).geojson");
-    var SATELLITE_MAX_NATIVE_ZOOM = 19;
-    var SATELLITE_MAX_ZOOM = 22;
+    /*
+      Esri World Imagery: z19+ can still show empty/placeholder tiles in many areas. Cap the map
+      at z18 so zoom-in stops where tiles stay sharp and consistent (Saved map — satellite only).
+    */
+    var SATELLITE_MAX_ZOOM = 18;
     var banner = document.getElementById("saved-sat-banner");
     var statusEl = document.getElementById("saved-sat-status");
 
@@ -1234,7 +1237,7 @@
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       {
         maxZoom: SATELLITE_MAX_ZOOM,
-        maxNativeZoom: SATELLITE_MAX_NATIVE_ZOOM,
+        maxNativeZoom: SATELLITE_MAX_ZOOM,
         attribution:
           'Tiles © <a href="https://www.esri.com/">Esri</a> — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
       }
@@ -1282,7 +1285,7 @@
       if (bounds.isValid()) {
         map.fitBounds(bounds, {
           padding: [40, 40],
-          maxZoom: SATELLITE_MAX_NATIVE_ZOOM
+          maxZoom: SATELLITE_MAX_ZOOM
         });
       }
       hideBanner();
@@ -1461,7 +1464,11 @@
       preferCanvas: false,
       zoomSnap: 1,
       zoomDelta: 1,
-      wheelPxPerZoomLevel: 120
+      wheelPxPerZoomLevel: 120,
+      /* CSS zoom/fade on one map finishes after the other’s instant setView → visible lag / mismatch */
+      zoomAnimation: false,
+      fadeAnimation: false,
+      inertia: false
     }).setView(defaultCenter, defaultZoom);
     var mapTop = L.map("map-split-ap-top", {
       zoomControl: false,
@@ -1469,7 +1476,10 @@
       attributionControl: false,
       zoomSnap: 1,
       zoomDelta: 1,
-      wheelPxPerZoomLevel: 120
+      wheelPxPerZoomLevel: 120,
+      zoomAnimation: false,
+      fadeAnimation: false,
+      inertia: false
     }).setView(defaultCenter, defaultZoom);
     /* Right pane is pannable/zoomable; stays in sync with base via bidirectional sync */
     mapTop.dragging.enable();
@@ -1573,7 +1583,7 @@
           var b = layer.getBounds && layer.getBounds();
           if (b && b.isValid()) {
             /* Fit the map that was clicked; move/zoom listeners sync the other map */
-            map.fitBounds(b.pad(0.06), { maxZoom: 13, animate: true });
+            map.fitBounds(b.pad(0.06), { maxZoom: 13, animate: false });
           }
           /*
             Popups must open on the same map as the layer. mapBase sits under the swipe mask
@@ -1640,54 +1650,56 @@
         ensureSplitEdgeLayer();
       });
 
-    /* ── Keep both maps aligned: base ↔ top (re-entrancy guard avoids feedback loops) ── */
-    var splitMapSyncing = false;
-    var syncTopRaf = null;
-    var syncBaseRaf = null;
+    /* ── Keep both maps aligned (Leaflet.Sync style: ignore self-events while follower receives setView) ── */
+    function splitViewsMatch(c1, z1, c2, z2) {
+      return (
+        Math.abs(c2.lat - c1.lat) < 1e-7 &&
+        Math.abs(c2.lng - c1.lng) < 1e-7 &&
+        Math.abs(z2 - z1) < 0.001
+      );
+    }
+    function markFollowerApplying(map) {
+      map._splitFollowerApplying = true;
+      queueMicrotask(function () {
+        queueMicrotask(function () {
+          map._splitFollowerApplying = false;
+        });
+      });
+    }
     function syncTopToBase() {
-      if (splitMapSyncing) return;
       var c = mapBase.getCenter();
       var z = mapBase.getZoom();
       var tc = mapTop.getCenter();
       var tz = mapTop.getZoom();
-      if (Math.abs(tc.lat - c.lat) < 1e-8 && Math.abs(tc.lng - c.lng) < 1e-8 && Math.abs(tz - z) < 0.0001) return;
-      splitMapSyncing = true;
+      if (splitViewsMatch(c, z, tc, tz)) return;
+      markFollowerApplying(mapTop);
       mapTop.setView(c, z, { animate: false });
-      splitMapSyncing = false;
     }
     function syncBaseToTop() {
-      if (splitMapSyncing) return;
       var c = mapTop.getCenter();
       var z = mapTop.getZoom();
       var bc = mapBase.getCenter();
       var bz = mapBase.getZoom();
-      if (Math.abs(bc.lat - c.lat) < 1e-8 && Math.abs(bc.lng - c.lng) < 1e-8 && Math.abs(bz - z) < 0.0001) return;
-      splitMapSyncing = true;
+      if (splitViewsMatch(c, z, bc, bz)) return;
+      markFollowerApplying(mapBase);
       mapBase.setView(c, z, { animate: false });
-      splitMapSyncing = false;
     }
-    function scheduleSyncTopToBase() {
-      if (syncTopRaf != null) return;
-      syncTopRaf = requestAnimationFrame(function () {
-        syncTopRaf = null;
-        syncTopToBase();
-      });
+    function onBaseViewChange() {
+      if (mapBase._splitFollowerApplying) return;
+      syncTopToBase();
     }
-    function scheduleSyncBaseToTop() {
-      if (syncBaseRaf != null) return;
-      syncBaseRaf = requestAnimationFrame(function () {
-        syncBaseRaf = null;
-        syncBaseToTop();
-      });
+    function onTopViewChange() {
+      if (mapTop._splitFollowerApplying) return;
+      syncBaseToTop();
     }
-    mapBase.on("move", scheduleSyncTopToBase);
-    mapBase.on("zoom", scheduleSyncTopToBase);
-    mapBase.on("moveend", syncTopToBase);
-    mapBase.on("zoomend", syncTopToBase);
-    mapTop.on("move", scheduleSyncBaseToTop);
-    mapTop.on("zoom", scheduleSyncBaseToTop);
-    mapTop.on("moveend", syncBaseToTop);
-    mapTop.on("zoomend", syncBaseToTop);
+    mapBase.on("move", onBaseViewChange);
+    mapBase.on("zoom", onBaseViewChange);
+    mapBase.on("moveend", onBaseViewChange);
+    mapBase.on("zoomend", onBaseViewChange);
+    mapTop.on("move", onTopViewChange);
+    mapTop.on("zoom", onTopViewChange);
+    mapTop.on("moveend", onTopViewChange);
+    mapTop.on("zoomend", onTopViewChange);
 
     var splitRootLastW = -1;
     var splitRootLastH = -1;
@@ -1718,7 +1730,7 @@
       splitResizeDebounce = setTimeout(function () {
         splitResizeDebounce = null;
         updateSwipeInnerWidth();
-      }, 100);
+      }, 16);
     }
     if (typeof ResizeObserver !== "undefined" && root) {
       new ResizeObserver(debouncedSwipeResize).observe(root);
@@ -1726,6 +1738,7 @@
     window.addEventListener("resize", debouncedSwipeResize);
 
     var splitPct = 50;
+    var splitLayoutRaf = null;
     function applySplit(pct) {
       splitPct = Math.max(8, Math.min(92, pct));
       if (mask) mask.style.width = (100 - splitPct) + "%";
@@ -1733,6 +1746,11 @@
         slider.style.left = splitPct + "%";
         slider.setAttribute("aria-valuenow", String(Math.round(splitPct)));
       }
+      if (splitLayoutRaf != null) cancelAnimationFrame(splitLayoutRaf);
+      splitLayoutRaf = requestAnimationFrame(function () {
+        splitLayoutRaf = null;
+        updateSwipeInnerWidth();
+      });
     }
     applySplit(50);
 
