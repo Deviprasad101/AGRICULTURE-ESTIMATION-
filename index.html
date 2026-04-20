@@ -828,6 +828,65 @@
       pointer-events: none;
     }
     #view-split-ap .split-ap-status { font-size: 12px; color: #fbbf24; }
+
+    /* ═══ Saved paths & points — satellite (from map_satellite_viewer.html) ═══ */
+    #view-saved-sat.view.active {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 49px);
+      background: #0f172a;
+      font-family: "DM Sans", system-ui, sans-serif;
+    }
+    #view-saved-sat .saved-sat-toolbar {
+      flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid #334155;
+      color: #e2e8f0;
+      font-size: 13px;
+    }
+    #view-saved-sat .saved-sat-toolbar strong { color: #4ade80; }
+    #view-saved-sat .saved-sat-hint { color: #94a3b8; font-size: 12px; max-width: 720px; line-height: 1.45; }
+    #view-saved-sat .saved-sat-map-shell {
+      flex: 1;
+      min-height: 220px;
+      position: relative;
+      min-width: 0;
+    }
+    #view-saved-sat #map-saved-sat {
+      position: absolute;
+      inset: 0;
+    }
+    #view-saved-sat #saved-sat-banner {
+      position: absolute;
+      z-index: 1001;
+      left: 12px;
+      top: 12px;
+      max-width: min(420px, calc(100vw - 24px));
+      padding: 10px 12px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #e2e8f0;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+    #view-saved-sat #saved-sat-banner.error {
+      border-color: #f87171;
+      color: #fecaca;
+    }
+    #view-saved-sat #saved-sat-banner code { font-size: 11px; word-break: break-all; color: #94a3b8; }
+    #view-saved-sat #saved-sat-status {
+      flex-shrink: 0;
+      margin: 0;
+      padding: 6px 16px 10px;
+      font-size: 12px;
+      color: #fbbf24;
+    }
   </style>
 </head>
 <body>
@@ -835,6 +894,7 @@
     <button type="button" class="active" role="tab" aria-selected="true" data-view="ap" id="tab-ap">Andhra Pradesh — boundaries</button>
     <button type="button" role="tab" aria-selected="false" data-view="tirupati" id="tab-tirupati">Chinagottigallu — crop dashboard</button>
     <button type="button" role="tab" aria-selected="false" data-view="splitap" id="tab-split-ap">Split: satellite ⟷ fields</button>
+    <button type="button" role="tab" aria-selected="false" data-view="savedsat" id="tab-saved-sat">Saved map — satellite</button>
   </nav>
 
   <!-- ═══ AP state map ═══ -->
@@ -1011,6 +1071,23 @@
     <p id="splitApStatus" class="split-ap-status" style="margin:0;padding:6px 16px 10px" aria-live="polite"></p>
   </div>
 
+  <!-- ═══ Saved map points / paths on Esri satellite (map_satellite_viewer + GeoJSON) ═══ -->
+  <div id="view-saved-sat" class="view" role="tabpanel" aria-labelledby="tab-saved-sat" hidden>
+    <div class="saved-sat-toolbar">
+      <div>
+        <strong>Saved map — satellite</strong>
+        <div class="saved-sat-hint">
+          Default layer: <code>saved_field_groups (2).geojson</code> — field corner <strong>MultiPoints</strong>, per-field <strong>paths</strong> (blue lines), and <code>bounding_box</code> hidden. Serve this folder over HTTP so the file loads.
+        </div>
+      </div>
+    </div>
+    <div class="saved-sat-map-shell">
+      <div id="saved-sat-banner" hidden></div>
+      <div id="map-saved-sat" role="application" aria-label="Satellite map with saved GeoJSON"></div>
+    </div>
+    <p id="saved-sat-status" aria-live="polite"></p>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
 (function () {
@@ -1019,26 +1096,33 @@
   var tabAp = document.getElementById("tab-ap");
   var tabTp = document.getElementById("tab-tirupati");
   var tabSplitAp = document.getElementById("tab-split-ap");
+  var tabSavedSat = document.getElementById("tab-saved-sat");
   var viewAp = document.getElementById("view-ap");
   var viewTp = document.getElementById("view-tirupati");
   var viewSplitAp = document.getElementById("view-split-ap");
+  var viewSavedSat = document.getElementById("view-saved-sat");
 
   function showView(which) {
     var isAp = which === "ap";
     var isTp = which === "tirupati";
     var isSplit = which === "splitap";
+    var isSavedSat = which === "savedsat";
     tabAp.classList.toggle("active", isAp);
     tabTp.classList.toggle("active", isTp);
     tabSplitAp.classList.toggle("active", isSplit);
+    if (tabSavedSat) tabSavedSat.classList.toggle("active", isSavedSat);
     tabAp.setAttribute("aria-selected", isAp ? "true" : "false");
     tabTp.setAttribute("aria-selected", isTp ? "true" : "false");
     tabSplitAp.setAttribute("aria-selected", isSplit ? "true" : "false");
+    if (tabSavedSat) tabSavedSat.setAttribute("aria-selected", isSavedSat ? "true" : "false");
     viewAp.classList.toggle("active", isAp);
     viewTp.classList.toggle("active", isTp);
     viewSplitAp.classList.toggle("active", isSplit);
+    if (viewSavedSat) viewSavedSat.classList.toggle("active", isSavedSat);
     viewAp.hidden = !isAp;
     viewTp.hidden = !isTp;
     viewSplitAp.hidden = !isSplit;
+    if (viewSavedSat) viewSavedSat.hidden = !isSavedSat;
     if (isAp && window.__mapAp) {
       setTimeout(function () { window.__mapAp.invalidateSize(); }, 150);
     }
@@ -1062,11 +1146,172 @@
         if (window.__splitApRefreshSize) window.__splitApRefreshSize();
       }, 200);
     }
+    if (isSavedSat) {
+      if (!window.__savedSatInited) {
+        initSavedSatelliteViewer();
+        window.__savedSatInited = true;
+      }
+      setTimeout(function () {
+        if (window.__mapSavedSat && typeof window.__mapSavedSat.invalidateSize === "function") {
+          window.__mapSavedSat.invalidateSize();
+        }
+      }, 200);
+    }
   }
 
   tabAp.addEventListener("click", function () { showView("ap"); });
   tabTp.addEventListener("click", function () { showView("tirupati"); });
   tabSplitAp.addEventListener("click", function () { showView("splitap"); });
+  if (tabSavedSat) tabSavedSat.addEventListener("click", function () { showView("savedsat"); });
+
+  function initSavedSatelliteViewer() {
+    var GEOJSON_FILE = encodeURI("saved_field_groups (2).geojson");
+    var SATELLITE_MAX_NATIVE_ZOOM = 19;
+    var SATELLITE_MAX_ZOOM = 22;
+    var banner = document.getElementById("saved-sat-banner");
+    var statusEl = document.getElementById("saved-sat-status");
+
+    function showBanner(msg, isError) {
+      if (!banner) return;
+      banner.hidden = false;
+      banner.classList.toggle("error", !!isError);
+      banner.innerHTML = msg;
+    }
+
+    function hideBanner() {
+      if (banner) banner.hidden = true;
+    }
+
+    function setStatus(text) {
+      if (statusEl) statusEl.textContent = text || "";
+    }
+
+    function geojsonStyle(feature) {
+      var t = feature.geometry && feature.geometry.type;
+      if (t === "LineString" || t === "MultiLineString") {
+        return { color: "#1a66cc", weight: 2, opacity: 1 };
+      }
+      return {};
+    }
+
+    function geojsonFilter(feature) {
+      var k = feature.properties && feature.properties.kind;
+      if (k === "bounding_box") return false;
+      return true;
+    }
+
+    function normalizeGeoJSON(data) {
+      if (!data || typeof data !== "object") return null;
+      if (data.type === "FeatureCollection") return data;
+      if (data.type === "Feature") {
+        return { type: "FeatureCollection", features: [data] };
+      }
+      var geomTypes = [
+        "Point",
+        "MultiPoint",
+        "LineString",
+        "MultiLineString",
+        "Polygon",
+        "MultiPolygon",
+        "GeometryCollection"
+      ];
+      if (geomTypes.indexOf(data.type) !== -1) {
+        return {
+          type: "FeatureCollection",
+          features: [{ type: "Feature", properties: {}, geometry: data }]
+        };
+      }
+      return null;
+    }
+
+    var map = L.map("map-saved-sat", {
+      zoomControl: true,
+      maxZoom: SATELLITE_MAX_ZOOM
+    });
+    window.__mapSavedSat = map;
+
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: SATELLITE_MAX_ZOOM,
+        maxNativeZoom: SATELLITE_MAX_NATIVE_ZOOM,
+        attribution:
+          'Tiles © <a href="https://www.esri.com/">Esri</a> — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+      }
+    ).addTo(map);
+
+    var geoLayer = null;
+
+    function applyGeoJSON(data) {
+      var normalized = normalizeGeoJSON(data);
+      if (!normalized) {
+        showBanner("<strong>Invalid GeoJSON.</strong> Use a FeatureCollection, Feature, or geometry object.", true);
+        setStatus("");
+        return;
+      }
+      if (geoLayer) {
+        map.removeLayer(geoLayer);
+        geoLayer = null;
+      }
+      geoLayer = L.geoJSON(normalized, {
+        filter: geojsonFilter,
+        style: geojsonStyle,
+        pointToLayer: function (feature, latlng) {
+          return L.circleMarker(latlng, {
+            radius: 6,
+            fillColor: "#1a66cc",
+            color: "#0f172a",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.88
+          });
+        },
+        onEachFeature: function (feature, layer) {
+          var p = feature.properties || {};
+          var lines = [];
+          if (p.name != null) lines.push("<strong>" + String(p.name).replace(/</g, "&lt;") + "</strong>");
+          if (p.fieldNo != null) lines.push("<strong>Field #</strong>: " + String(p.fieldNo));
+          if (p.pointCount != null) lines.push("<strong>Points</strong>: " + String(p.pointCount));
+          if (p.savedAt) lines.push("<strong>Saved</strong>: " + String(p.savedAt).replace(/</g, "&lt;"));
+          if (p.kind) lines.push("<strong>Kind</strong>: " + String(p.kind).replace(/</g, "&lt;"));
+          if (p.order) lines.push("<strong>Order</strong>: " + String(p.order).replace(/</g, "&lt;"));
+          if (lines.length) layer.bindPopup(lines.join("<br/>"));
+        }
+      }).addTo(map);
+      var bounds = geoLayer.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, {
+          padding: [40, 40],
+          maxZoom: SATELLITE_MAX_NATIVE_ZOOM
+        });
+      }
+      hideBanner();
+      setStatus("GeoJSON applied (" + (normalized.features && normalized.features.length) + " features, bounding_box hidden).");
+    }
+
+    fetch(GEOJSON_FILE)
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        applyGeoJSON(data);
+      })
+      .catch(function (err) {
+        console.error(err);
+        showBanner(
+          "<strong>Could not load <code>saved_field_groups (2).geojson</code>.</strong><br/>Serve this folder over HTTP (e.g. <code>python -m http.server 8765</code>) and open the app from that server.<br/><small>(" +
+            String((err && err.message) || err) +
+            ")</small>",
+          true
+        );
+        setStatus("");
+      });
+
+    setTimeout(function () {
+      map.invalidateSize();
+    }, 100);
+  }
 
   function initSplitApCompare() {
     var FIELDS_URL = "data/chinagottigallu_fields.geojson";

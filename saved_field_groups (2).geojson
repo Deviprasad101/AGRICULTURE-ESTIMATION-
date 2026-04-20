@@ -1,0 +1,1779 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 1,
+        "name": "Field 1",
+        "pointCount": 5
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83183681964876,
+            13.819838288765435
+          ],
+          [
+            79.83218014240266,
+            13.819911216530315
+          ],
+          [
+            79.83224987983705,
+            13.819395512560005
+          ],
+          [
+            79.83188509941102,
+            13.819385094286211
+          ],
+          [
+            79.83184218406679,
+            13.819780988362737
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 1,
+        "name": "Field 1",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83183681964876,
+            13.819838288765435
+          ],
+          [
+            79.83218014240266,
+            13.819911216530315
+          ],
+          [
+            79.83224987983705,
+            13.819395512560005
+          ],
+          [
+            79.83188509941102,
+            13.819385094286211
+          ],
+          [
+            79.83184218406679,
+            13.819780988362737
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 2,
+        "name": "Field 2",
+        "pointCount": 4
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83226060867311,
+            13.819926843905522
+          ],
+          [
+            79.83260929584505,
+            13.820020608134799
+          ],
+          [
+            79.8326736688614,
+            13.819421558242453
+          ],
+          [
+            79.8323142528534,
+            13.819390303423171
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 2,
+        "name": "Field 2",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83226060867311,
+            13.819926843905522
+          ],
+          [
+            79.83260929584505,
+            13.820020608134799
+          ],
+          [
+            79.8326736688614,
+            13.819421558242453
+          ],
+          [
+            79.8323142528534,
+            13.819390303423171
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 3,
+        "name": "Field 3",
+        "pointCount": 5
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83300089836122,
+            13.820036235502664
+          ],
+          [
+            79.83266294002534,
+            13.820036235502664
+          ],
+          [
+            79.83267903327942,
+            13.819629923597141
+          ],
+          [
+            79.8329794406891,
+            13.819671596645712
+          ],
+          [
+            79.83300089836122,
+            13.819968516900968
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 3,
+        "name": "Field 3",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83300089836122,
+            13.820036235502664
+          ],
+          [
+            79.83266294002534,
+            13.820036235502664
+          ],
+          [
+            79.83267903327942,
+            13.819629923597141
+          ],
+          [
+            79.8329794406891,
+            13.819671596645712
+          ],
+          [
+            79.83300089836122,
+            13.819968516900968
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 4,
+        "name": "Field 4",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83295798301698,
+            13.81961429620201
+          ],
+          [
+            79.83295798301698,
+            13.819458022192968
+          ],
+          [
+            79.83273267745973,
+            13.819437185650509
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 4,
+        "name": "Field 4",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83295798301698,
+            13.81961429620201
+          ],
+          [
+            79.83295798301698,
+            13.819458022192968
+          ],
+          [
+            79.83273267745973,
+            13.819437185650509
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 5,
+        "name": "Field 5",
+        "pointCount": 5
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83231961727144,
+            13.819129846432732
+          ],
+          [
+            79.83235180377962,
+            13.819317375495206
+          ],
+          [
+            79.83297407627107,
+            13.819374676011947
+          ],
+          [
+            79.83294725418092,
+            13.819145473860369
+          ],
+          [
+            79.83237862586977,
+            13.819119428147056
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 5,
+        "name": "Field 5",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83231961727144,
+            13.819129846432732
+          ],
+          [
+            79.83235180377962,
+            13.819317375495206
+          ],
+          [
+            79.83297407627107,
+            13.819374676011947
+          ],
+          [
+            79.83294725418092,
+            13.819145473860369
+          ],
+          [
+            79.83237862586977,
+            13.819119428147056
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 6,
+        "name": "Field 6",
+        "pointCount": 5
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83181536197662,
+            13.819312166356617
+          ],
+          [
+            79.83174562454225,
+            13.819312166356617
+          ],
+          [
+            79.83175635337831,
+            13.818885016596171
+          ],
+          [
+            79.83232498168945,
+            13.81892668977802
+          ],
+          [
+            79.83232498168945,
+            13.819062127567506
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 6,
+        "name": "Field 6",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83181536197662,
+            13.819312166356617
+          ],
+          [
+            79.83174562454225,
+            13.819312166356617
+          ],
+          [
+            79.83175635337831,
+            13.818885016596171
+          ],
+          [
+            79.83232498168945,
+            13.81892668977802
+          ],
+          [
+            79.83232498168945,
+            13.819062127567506
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 7,
+        "name": "Field 7",
+        "pointCount": 5
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83172416687013,
+            13.818645395655905
+          ],
+          [
+            79.83231961727144,
+            13.818718323794245
+          ],
+          [
+            79.83230888843538,
+            13.818869389151054
+          ],
+          [
+            79.83174562454225,
+            13.818827715958964
+          ],
+          [
+            79.83172416687013,
+            13.818707905490172
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 7,
+        "name": "Field 7",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83172416687013,
+            13.818645395655905
+          ],
+          [
+            79.83231961727144,
+            13.818718323794245
+          ],
+          [
+            79.83230888843538,
+            13.818869389151054
+          ],
+          [
+            79.83174562454225,
+            13.818827715958964
+          ],
+          [
+            79.83172416687013,
+            13.818707905490172
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 8,
+        "name": "Field 8",
+        "pointCount": 5
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83170270919801,
+            13.818478702682496
+          ],
+          [
+            79.83171343803407,
+            13.81856725833946
+          ],
+          [
+            79.8323142528534,
+            13.818671441422204
+          ],
+          [
+            79.83233571052551,
+            13.818572467494716
+          ],
+          [
+            79.83176171779634,
+            13.818463075210115
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 8,
+        "name": "Field 8",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83170270919801,
+            13.818478702682496
+          ],
+          [
+            79.83171343803407,
+            13.81856725833946
+          ],
+          [
+            79.8323142528534,
+            13.818671441422204
+          ],
+          [
+            79.83233571052551,
+            13.818572467494716
+          ],
+          [
+            79.83176171779634,
+            13.818463075210115
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 9,
+        "name": "Field 9",
+        "pointCount": 5
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83232498168945,
+            13.81849433015382
+          ],
+          [
+            79.83234107494356,
+            13.818202617182916
+          ],
+          [
+            79.83169734477998,
+            13.818082806392596
+          ],
+          [
+            79.83169734477998,
+            13.818390146991854
+          ],
+          [
+            79.83228206634523,
+            13.818520375937027
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 9,
+        "name": "Field 9",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83232498168945,
+            13.81849433015382
+          ],
+          [
+            79.83234107494356,
+            13.818202617182916
+          ],
+          [
+            79.83169734477998,
+            13.818082806392596
+          ],
+          [
+            79.83169734477998,
+            13.818390146991854
+          ],
+          [
+            79.83228206634523,
+            13.818520375937027
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 10,
+        "name": "Field 10",
+        "pointCount": 6
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83168661594392,
+            13.817994250551465
+          ],
+          [
+            79.83171343803407,
+            13.817593144261211
+          ],
+          [
+            79.83184754848482,
+            13.817603562615155
+          ],
+          [
+            79.8323839902878,
+            13.817811929596061
+          ],
+          [
+            79.8323678970337,
+            13.817999459719518
+          ],
+          [
+            79.83234643936157,
+            13.818129688883094
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 10,
+        "name": "Field 10",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83168661594392,
+            13.817994250551465
+          ],
+          [
+            79.83171343803407,
+            13.817593144261211
+          ],
+          [
+            79.83184754848482,
+            13.817603562615155
+          ],
+          [
+            79.8323839902878,
+            13.817811929596061
+          ],
+          [
+            79.8323678970337,
+            13.817999459719518
+          ],
+          [
+            79.83234643936157,
+            13.818129688883094
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 11,
+        "name": "Field 11",
+        "pointCount": 5
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83191192150117,
+            13.817405613810667
+          ],
+          [
+            79.83245909214021,
+            13.817541052484536
+          ],
+          [
+            79.83241081237794,
+            13.817733792000059
+          ],
+          [
+            79.83189046382905,
+            13.817541052484536
+          ],
+          [
+            79.83190655708314,
+            13.817457705617635
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 11,
+        "name": "Field 11",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83191192150117,
+            13.817405613810667
+          ],
+          [
+            79.83245909214021,
+            13.817541052484536
+          ],
+          [
+            79.83241081237794,
+            13.817733792000059
+          ],
+          [
+            79.83189046382905,
+            13.817541052484536
+          ],
+          [
+            79.83190655708314,
+            13.817457705617635
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 12,
+        "name": "Field 12",
+        "pointCount": 6
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83279705047609,
+            13.817629608497953
+          ],
+          [
+            79.832780957222,
+            13.817837975455564
+          ],
+          [
+            79.83273804187776,
+            13.817999459719518
+          ],
+          [
+            79.83241617679597,
+            13.817864021312154
+          ],
+          [
+            79.83253419399263,
+            13.817525424949258
+          ],
+          [
+            79.83275413513185,
+            13.817603562615155
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 12,
+        "name": "Field 12",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83279705047609,
+            13.817629608497953
+          ],
+          [
+            79.832780957222,
+            13.817837975455564
+          ],
+          [
+            79.83273804187776,
+            13.817999459719518
+          ],
+          [
+            79.83241617679597,
+            13.817864021312154
+          ],
+          [
+            79.83253419399263,
+            13.817525424949258
+          ],
+          [
+            79.83275413513185,
+            13.817603562615155
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 13,
+        "name": "Field 13",
+        "pointCount": 4
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83286678791046,
+            13.817619190145193
+          ],
+          [
+            79.83299016952516,
+            13.817629608497953
+          ],
+          [
+            79.83297407627107,
+            13.818181780528157
+          ],
+          [
+            79.8323839902878,
+            13.818046342226795
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 13,
+        "name": "Field 13",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83286678791046,
+            13.817619190145193
+          ],
+          [
+            79.83299016952516,
+            13.817629608497953
+          ],
+          [
+            79.83297407627107,
+            13.818181780528157
+          ],
+          [
+            79.8323839902878,
+            13.818046342226795
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 14,
+        "name": "Field 14",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.8329794406891,
+            13.818233872161557
+          ],
+          [
+            79.83295798301698,
+            13.818551630873035
+          ],
+          [
+            79.8323839902878,
+            13.818499539310702
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 14,
+        "name": "Field 14",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.8329794406891,
+            13.818233872161557
+          ],
+          [
+            79.83295798301698,
+            13.818551630873035
+          ],
+          [
+            79.8323839902878,
+            13.818499539310702
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 15,
+        "name": "Field 15",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83296334743501,
+            13.818603722423726
+          ],
+          [
+            79.83296334743501,
+            13.818822506809434
+          ],
+          [
+            79.83235180377962,
+            13.818759997005902
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 15,
+        "name": "Field 15",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83296334743501,
+            13.818603722423726
+          ],
+          [
+            79.83296334743501,
+            13.818822506809434
+          ],
+          [
+            79.83235180377962,
+            13.818759997005902
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 16,
+        "name": "Field 16",
+        "pointCount": 2
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83295261859895,
+            13.819082964143526
+          ],
+          [
+            79.83295261859895,
+            13.81887459829954
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 16,
+        "name": "Field 16",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83295261859895,
+            13.819082964143526
+          ],
+          [
+            79.83295261859895,
+            13.81887459829954
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 17,
+        "name": "Field 17",
+        "pointCount": 5
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83305454254152,
+            13.819994562519346
+          ],
+          [
+            79.83336567878723,
+            13.820051862869501
+          ],
+          [
+            79.83337104320528,
+            13.819807034002082
+          ],
+          [
+            79.83334958553316,
+            13.819697642297283
+          ],
+          [
+            79.83303308486938,
+            13.819682014906695
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 17,
+        "name": "Field 17",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83305454254152,
+            13.819994562519346
+          ],
+          [
+            79.83336567878723,
+            13.820051862869501
+          ],
+          [
+            79.83337104320528,
+            13.819807034002082
+          ],
+          [
+            79.83334958553316,
+            13.819697642297283
+          ],
+          [
+            79.83303308486938,
+            13.819682014906695
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 18,
+        "name": "Field 18",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83337104320528,
+            13.819645550991229
+          ],
+          [
+            79.83330130577089,
+            13.819395512560005
+          ],
+          [
+            79.83304917812349,
+            13.819359048599692
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 18,
+        "name": "Field 18",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83337104320528,
+            13.819645550991229
+          ],
+          [
+            79.83330130577089,
+            13.819395512560005
+          ],
+          [
+            79.83304917812349,
+            13.819359048599692
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 19,
+        "name": "Field 19",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83332276344301,
+            13.819343421186382
+          ],
+          [
+            79.83332276344301,
+            13.819171519570766
+          ],
+          [
+            79.83300626277925,
+            13.81916631042892
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 19,
+        "name": "Field 19",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83332276344301,
+            13.819343421186382
+          ],
+          [
+            79.83332276344301,
+            13.819171519570766
+          ],
+          [
+            79.83300626277925,
+            13.81916631042892
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 20,
+        "name": "Field 20",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83333349227907,
+            13.819098591574305
+          ],
+          [
+            79.83333349227907,
+            13.81889543489233
+          ],
+          [
+            79.83301162719727,
+            13.818827715958964
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 20,
+        "name": "Field 20",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83333349227907,
+            13.819098591574305
+          ],
+          [
+            79.83333349227907,
+            13.81889543489233
+          ],
+          [
+            79.83301162719727,
+            13.818827715958964
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 21,
+        "name": "Field 21",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83341395854951,
+            13.81887459829954
+          ],
+          [
+            79.83344078063966,
+            13.818655813962776
+          ],
+          [
+            79.83301162719727,
+            13.818624559040737
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 21,
+        "name": "Field 21",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83341395854951,
+            13.81887459829954
+          ],
+          [
+            79.83344078063966,
+            13.818655813962776
+          ],
+          [
+            79.83301162719727,
+            13.818624559040737
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 22,
+        "name": "Field 22",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.8333925008774,
+            13.818619349886665
+          ],
+          [
+            79.8334300518036,
+            13.81840056531015
+          ],
+          [
+            79.83300626277925,
+            13.818348473714028
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 22,
+        "name": "Field 22",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.8333925008774,
+            13.818619349886665
+          ],
+          [
+            79.8334300518036,
+            13.81840056531015
+          ],
+          [
+            79.83300626277925,
+            13.818348473714028
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 23,
+        "name": "Field 23",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83345150947572,
+            13.818338055393404
+          ],
+          [
+            79.8334836959839,
+            13.818213035509583
+          ],
+          [
+            79.83299016952516,
+            13.818114061387316
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 23,
+        "name": "Field 23",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83345150947572,
+            13.818338055393404
+          ],
+          [
+            79.8334836959839,
+            13.818213035509583
+          ],
+          [
+            79.83299016952516,
+            13.818114061387316
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 24,
+        "name": "Field 24",
+        "pointCount": 4
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83355343341827,
+            13.818233872161557
+          ],
+          [
+            79.83376801013948,
+            13.818254708811645
+          ],
+          [
+            79.833682179451,
+            13.817775465387856
+          ],
+          [
+            79.83303308486938,
+            13.817676491079668
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 24,
+        "name": "Field 24",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83355343341827,
+            13.818233872161557
+          ],
+          [
+            79.83376801013948,
+            13.818254708811645
+          ],
+          [
+            79.833682179451,
+            13.817775465387856
+          ],
+          [
+            79.83303308486938,
+            13.817676491079668
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 25,
+        "name": "Field 25",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83375728130342,
+            13.818312009589816
+          ],
+          [
+            79.83377337455751,
+            13.818483911839722
+          ],
+          [
+            79.83346223831178,
+            13.818452656894632
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 25,
+        "name": "Field 25",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83375728130342,
+            13.818312009589816
+          ],
+          [
+            79.83377337455751,
+            13.818483911839722
+          ],
+          [
+            79.83346223831178,
+            13.818452656894632
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 26,
+        "name": "Field 26",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83374655246736,
+            13.818536003405553
+          ],
+          [
+            79.83374655246736,
+            13.818681859727931
+          ],
+          [
+            79.83349442481996,
+            13.818687068880603
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 26,
+        "name": "Field 26",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83374655246736,
+            13.818536003405553
+          ],
+          [
+            79.83374655246736,
+            13.818681859727931
+          ],
+          [
+            79.83349442481996,
+            13.818687068880603
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 27,
+        "name": "Field 27",
+        "pointCount": 4
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83344078063966,
+            13.81979140661882
+          ],
+          [
+            79.83390748500824,
+            13.819796615746698
+          ],
+          [
+            79.83383774757387,
+            13.819348630324258
+          ],
+          [
+            79.83337104320528,
+            13.819322584633667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 27,
+        "name": "Field 27",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83344078063966,
+            13.81979140661882
+          ],
+          [
+            79.83390748500824,
+            13.819796615746698
+          ],
+          [
+            79.83383774757387,
+            13.819348630324258
+          ],
+          [
+            79.83337104320528,
+            13.819322584633667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 28,
+        "name": "Field 28",
+        "pointCount": 3
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83385920524599,
+            13.819265284104103
+          ],
+          [
+            79.83385920524599,
+            13.819213192701358
+          ],
+          [
+            79.83338713645935,
+            13.819187146995617
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 28,
+        "name": "Field 28",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83385920524599,
+            13.819265284104103
+          ],
+          [
+            79.83385920524599,
+            13.819213192701358
+          ],
+          [
+            79.83338713645935,
+            13.819187146995617
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_multipoint",
+        "fieldNo": 29,
+        "name": "Field 29",
+        "pointCount": 5
+      },
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [
+          [
+            79.83386456966402,
+            13.819145473860369
+          ],
+          [
+            79.83388602733612,
+            13.819030872699994
+          ],
+          [
+            79.8338431119919,
+            13.818931898925223
+          ],
+          [
+            79.83387529850006,
+            13.818780833608946
+          ],
+          [
+            79.83376801013948,
+            13.818780833608946
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "field_path",
+        "fieldNo": 29,
+        "name": "Field 29",
+        "order": "click order within field"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            79.83386456966402,
+            13.819145473860369
+          ],
+          [
+            79.83388602733612,
+            13.819030872699994
+          ],
+          [
+            79.8338431119919,
+            13.818931898925223
+          ],
+          [
+            79.83387529850006,
+            13.818780833608946
+          ],
+          [
+            79.83376801013948,
+            13.818780833608946
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "bounding_box",
+        "scope": "all_fields_combined"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              79.83133661594393,
+              13.817055613810668
+            ],
+            [
+              79.83425748500824,
+              13.817055613810668
+            ],
+            [
+              79.83425748500824,
+              13.8204018628695
+            ],
+            [
+              79.83133661594393,
+              13.8204018628695
+            ],
+            [
+              79.83133661594393,
+              13.817055613810668
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
