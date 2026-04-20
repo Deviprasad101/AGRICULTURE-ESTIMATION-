@@ -571,6 +571,8 @@
       flex: 1;
       min-height: 220px;
       position: relative;
+      overflow: hidden;
+      isolation: isolate;
     }
     /* Bottom layer: clean satellite (always visible, full area) */
     #view-split-ap #map-split-ap-base {
@@ -589,6 +591,7 @@
       overflow: hidden;
       z-index: 10;
       pointer-events: none;
+      clip-path: inset(0);
     }
     #view-split-ap .split-ap-swipe-inner {
       position: absolute;
@@ -596,6 +599,9 @@
       top: 0;
       bottom: 0;
       height: 100%;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
       pointer-events: none;
     }
     #view-split-ap #map-split-ap-top {
@@ -603,6 +609,31 @@
       right: 0;
       top: 0;
       bottom: 0;
+      overflow: hidden;
+    }
+    /* Right map must receive wheel/drag; inner was pointer-events:none */
+    #view-split-ap #map-split-ap-top.leaflet-container {
+      pointer-events: auto;
+    }
+    /* Default Leaflet +/− sits top-left on the base map — overlaps “Satellite” label & looks stacked on imagery */
+    #view-split-ap #map-split-ap-base .leaflet-top.leaflet-left {
+      top: auto !important;
+      bottom: 12px;
+      left: 10px !important;
+    }
+    #view-split-ap #map-split-ap-base .leaflet-control-zoom {
+      margin: 0;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    }
+    #view-split-ap #map-split-ap-base .leaflet-control-zoom a {
+      background: rgba(248, 250, 252, 0.96);
+      color: #0f172a;
+      font-weight: 700;
+    }
+    #view-split-ap #map-split-ap-base .leaflet-control-zoom a:hover {
+      background: #fff;
+      color: #0f172a;
     }
     /*
       Right-hand map must receive drags/zoom so panning works on that side. Sobel edge
